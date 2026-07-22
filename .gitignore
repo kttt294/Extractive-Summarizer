@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
@@ -216,3 +217,22 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+=======
+# Python / Virtual Environment
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+env/
+venv/
+
+# IDE / Editor
+.idea/
+.vscode/
+*.swp
+
+# OS / Temporary
+.DS_Store
+Thumbs.db
+*.log
+>>>>>>> 4bd5443 (Initial commit: Extractive Summarizer plan and documentation)

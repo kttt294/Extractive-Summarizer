@@ -1,0 +1,63 @@
+Transformer bao gồm 4 thành phần: embedding, encoder, decoder, predicting head
+
+EMBEDDING: mã hóa đoạn text đầu vào thành các embedding vector. Mỗi vector tương ứng với 1 token. Với mỗi token, ta cần mã hóa 2 thông tin của token này, bao gồm: thông tin về ý nghĩa (token embedding) + thông tin về vị trí (position embedding).
+	Token embedding biểu diễn mỗi token dưới dạng 1 vector có độ dài cố định, mã hóa ý nghĩa của token tương ứng. Ý tưởng của nó cũng giống như các mô hình cũ: word2vec, Glove, FastText (static representation)
+	Positional embedding mã hóa vị trí của các token trong đoạn text, do Transformer xử lý các token song song (chứ không giống như RNN biểu diễn tuần tự) nên nó không nhận biết được trật tự của các token trong văn bản
+
+ENCODER: tiếp nhận chuỗi các embedding vector đầu vào, chịu trách nhiệm làm giàu thêm thông tin của các embedding vector này bằng cách dựa vào các token xung quanh nó. Encoder bao gồm 1 chuỗi các encoder block giống nhau về mặt cấu trúc, khối sau làm giàu thêm thông tin + ý nghĩa của các embedding vector mà khối trước gửi đến
+
+DECODER: cấu trúc gần tương tự với Encoder nhưng có thêm layer Masked self-attention (tránh mô hình nhìn trước được các token trong tương lai) + layer Cross-attention (kết nối thông tin đầu ra của Encoder với đầu vào của Decoder)
+
+PREDICING HEAD: chuyển đổi các vector đầu ra của Decoder thành 1 vector lớn, có độ dài bằng số loại token khác nhau có thể có trong 1 ngôn ngữ đích. Mỗi giá trị trong vector này thể hiện xác suất mà mô hình tin rằng token tiếp theo mà mô hình cần sinh ra là token này
+
+
+WQ và WK là 2 ma trận trọng số vuông nxn với n là số chiều của embedding vector (512 với Transformer) 
+	WQ: query matrix-ma trận truy vấn.
+	WK: key matrix-ma trận khóa.
+	1 Queries vector của token A được tạo ra bằng cách lấy vector embedding token A nhân với ma trận truy vấn Q matrix.
+	1 Keys vector cũng vậy
+	-> thu được queries vector đại diện cho các câu hỏi mà 1 token đặt ra cho các token xung quanh nó, keys vector đại diện cho câu trả lời mà các token phản hồi lại câu hỏi mà các token xung quanh đặt ra cho nó  => giờ ta cần đánh giá mức độ phù hợp giữa 1 câu hỏi và 1 câu trả lời (query và key)
+
+Sau khi đã có queries vector và keys vectors, ta cần đánh giá mức độ phù hợp giữa 1 câu hỏi và 1 câu trả lời. -> ta tính tích vô hướng giữa các cặp key vector và query vector. Tích vô hướng càng lớn -> góc càng bé -> càng liên quan
+
+-> Sau bước này, ta có 1 ma trận E có kích thước nxn (n là số token đầu vào). mỗi phần tử trogn ma trận này thể hiện tích vô hướng giữa cặp key và query tương ứng. sau khi qua softmax : các giá trị nằm trong khoảng [0,1] và tổng mỗi hàng = 1. phần tử ở vị trí aij thể hiện: khi model xử lý token i (cập nhật embeddings của i) thì nó nên chú ý đến token j đến mức nào.
+
+Vậy token j sẽ khiến token i thay đổi 1 lượng bao nhiêu?
+Value vector của 1 token thể hiện: mức độ ảnh hưởng cụ thể mà nó sẽ gây lên các token xung quanh nó. Value vector được tạo ra cũng thông qua nhân ma trận vector embeddings của các token đầu vào với WV (Value matrix)
+
+values vector được dùng để nhân với output của hàm softmax mà ta tính ra ở trên. nhân vector -> thu được 1 context vector (vector ngữ cảnh, thể hiện sự thay đổi mà tất cả các token gây ra với token đang hỏi. đây là output của một lớp attention duy nhất bên trong một encoder block). context vector dùng để update giá trị của embeddings vector ban đầu, giúp thông tin ban đầu ko bị mất đi đồng thời bổ sung thêm ngữ cảnh từ các token xung quanh
+
+
+
+DECODER
+- tạo ra chuỗi đầu ra theo kiểu tự hồi quy (autoregressive), đồng thời liên tục kết hợp ngữ cảnh từ encoder.
+- Tại mỗi bước sinh từ tiếp theo, chỉ được nhìn vào các từ trước đó.
+- cấu trúc của decoder tương tự như cấu trúc của encoder, bao gồm nhiều decoder block liên tiếp nhau.
+- decoder block có cấu trúc gần tương tự encoder block. có 2 khác biệt chính là decoder block có thêm layer cross-attention và attention mask
+
+- cross-attention layer cho phép decoder tương tác với encoder, giúp model tập trung vào đầu vào khi sinh ra đầu ra. Các query vector bây giờ đến từ chuỗi đích (decoder hidden states) trong khi key vector và value vector đến từ chuỗi nguồn (encoder output). Chứ không giống như encoder là cả 3 loại vector này đều đến từ cùng 1 nguồn.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
