@@ -1,4 +1,4 @@
-# Extractive Summarizer AI: SBERT Fine-Tuned + K-Means + Post-Filtering
+# Extractive Summarizer AI: SBERT Fine-Tuned + K-Means
 
 Mô hình tóm tắt văn bản trích xuất (Extractive Summarization) song ngữ Anh - Việt ứng dụng **Sentence-BERT Fine-Tuned**, **K-Means Clustering**, **Post-filtering (Lọc trùng Cosine)** và **Khung Đánh giá Kép (Intrinsic & Extrinsic Metrics)**.
 
