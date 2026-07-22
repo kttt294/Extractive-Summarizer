@@ -5,10 +5,9 @@ from src.config import MODEL_CONFIGS, MODELS_DIR
 from src.dataset import load_evaluation_dataset, generate_oracle_extractive_pairs
 
 
-def train_finetune_sbert(lang: str = 'vi', epochs: int = 2, batch_size: int = 16, sample_data_count: int = 200):
+def train_finetune_sbert(lang: str = 'vi', epochs: int = 3, batch_size: int = 32, sample_data_count: int = 500):
     """
     Fine-tune mô hình SBERT trên các cặp câu Oracle với CosineSimilarityLoss.
-    Đáp ứng Góp ý Giữa kỳ của Giảng viên!
     """
     print(f"--> BẮT ĐẦU FINE-TUNING SBERT ({lang.upper()})")
 
@@ -23,7 +22,14 @@ def train_finetune_sbert(lang: str = 'vi', epochs: int = 2, batch_size: int = 16
         print(f"Không tìm thấy bài báo huấn luyện cho {lang}. Bỏ qua fine-tuning.")
         return
 
-    train_examples = generate_oracle_extractive_pairs(raw_articles, max_pairs=1000)
+    # Tự động điều chỉnh số lượng cặp câu Oracle theo sample_data_count
+    max_oracle_pairs = sample_data_count * 4
+    train_examples = generate_oracle_extractive_pairs(raw_articles, max_pairs=max_oracle_pairs)
+    
+    if not train_examples:
+        print("Không tạo được cặp câu huấn luyện nào. Bỏ qua fine-tuning.")
+        return
+
     train_dataloader = DataLoader(train_examples, shuffle=True, batch_size=batch_size)
 
     # 3. Định nghĩa Hàm Loss
@@ -48,4 +54,4 @@ def train_finetune_sbert(lang: str = 'vi', epochs: int = 2, batch_size: int = 16
 
 
 if __name__ == "__main__":
-    train_finetune_sbert(lang='en', epochs=2)
+    train_finetune_sbert(lang='en', epochs=3)
