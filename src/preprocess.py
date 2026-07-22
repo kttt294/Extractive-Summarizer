@@ -2,11 +2,12 @@ import nltk
 from langdetect import detect
 from src.config import OPTIMAL_HYPERPARAMS
 
-# Tải bộ tách câu của NLTK nếu chưa có
-try:
-    nltk.data.find('tokenizers/punkt')
-except LookupError:
-    nltk.download('punkt', quiet=True)
+# Tải bộ tách câu của NLTK (punkt & punkt_tab cho NLTK 3.9+)
+for resource in ['punkt', 'punkt_tab']:
+    try:
+        nltk.data.find(f'tokenizers/{resource}')
+    except LookupError:
+        nltk.download(resource, quiet=True)
 
 try:
     from underthesea import sent_tokenize as sent_tokenize_vi
@@ -37,9 +38,15 @@ def preprocess_text(text: str, lang: str = 'vi'):
     Trả về: Danh sách các tuple [(chỉ_số_gốc, nội_dung_câu)]
     """
     if lang == 'en':
-        raw_sentences = nltk.sent_tokenize(text)
+        try:
+            raw_sentences = nltk.sent_tokenize(text)
+        except Exception:
+            raw_sentences = [s.strip() for s in text.split('.') if s.strip()]
     else:
-        raw_sentences = sent_tokenize_vi(text)
+        try:
+            raw_sentences = sent_tokenize_vi(text)
+        except Exception:
+            raw_sentences = [s.strip() for s in text.split('.') if s.strip()]
 
     min_w = OPTIMAL_HYPERPARAMS['min_words']
     max_w = OPTIMAL_HYPERPARAMS['max_words']

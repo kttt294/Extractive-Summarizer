@@ -4,11 +4,12 @@ from datasets import load_dataset
 from rouge_score import rouge_scorer
 from sentence_transformers import InputExample
 
-# Đảm bảo punkt được tải sẵn
-try:
-    nltk.data.find('tokenizers/punkt')
-except LookupError:
-    nltk.download('punkt', quiet=True)
+# Đảm bảo punkt và punkt_tab được tải sẵn cho NLTK 3.9+
+for resource in ['punkt', 'punkt_tab']:
+    try:
+        nltk.data.find(f'tokenizers/{resource}')
+    except LookupError:
+        nltk.download(resource, quiet=True)
 
 
 def load_evaluation_dataset(lang: str = 'en', sample_count: int = 200):
@@ -20,8 +21,7 @@ def load_evaluation_dataset(lang: str = 'en', sample_count: int = 200):
     print(f"Đang nạp bộ dữ liệu thử nghiệm {lang.upper()} (số lượng={sample_count})...")
     if lang == 'en':
         ds = None
-        # Các phương án nạp dataset Tiếng Anh với trust_remote_code
-        for dataset_name in ["cnn_dailymail", "abisee/cnn_dailymail"]:
+        for dataset_name in ["abisee/cnn_dailymail", "cnn_dailymail"]:
             try:
                 ds = load_dataset(dataset_name, "3.0.0", split="test", trust_remote_code=True)
                 if ds is not None:
@@ -95,8 +95,12 @@ def generate_oracle_extractive_pairs(articles_data: List[dict], max_pairs: int =
         if not article or not highlights:
             continue
 
-        article_sents = nltk.sent_tokenize(article)
-        summary_sents = nltk.sent_tokenize(highlights)
+        try:
+            article_sents = nltk.sent_tokenize(article)
+            summary_sents = nltk.sent_tokenize(highlights)
+        except Exception:
+            article_sents = [s.strip() for s in article.split('.') if len(s.strip()) > 10]
+            summary_sents = [s.strip() for s in highlights.split('.') if len(s.strip()) > 10]
 
         for a_sent in article_sents[:10]:  # Tập trung vào các câu mở đầu
             for s_sent in summary_sents:
