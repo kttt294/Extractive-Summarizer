@@ -1,5 +1,7 @@
 # Implementation Plan — Cuối kỳ
+
 ## Extractive Summarization: SBERT Fine-tuning + K-Means + Post-filtering (Song ngữ Anh - Việt)
+
 ### *Giải quyết Góp ý Giữa kỳ của Giảng viên & Hệ thống Đánh giá Kép (Intrinsic & Extrinsic Metrics)*
 
 ---
@@ -31,6 +33,7 @@ Output    : Đường link Web Demo sống (Live URL) phục vụ thuyết trìn
 ## 2. Chi tiết Giai đoạn 1.1: Fine-Tuning SBERT (Giải quyết Góp ý Giữa kỳ)
 
 ### 2.1. Kiến trúc Training & Hàm Loss
+
 Nhóm tiến hành Fine-tune SBERT với bài toán **Regression Objective** sử dụng **`CosineSimilarityLoss`** (hoặc `MultipleNegativesRankingLoss`) để nâng cao độ phân giải vector nhúng cho bài viết:
 
 ```python
@@ -71,28 +74,31 @@ model_vi.save("my_finetuned_sbert_vi")
 Bài toán Unsupervised NLP của nhóm sử dụng phương pháp đánh giá toàn diện gồm 2 trụ cột:
 
 ### 3.1. Độ đo Nội tại (Intrinsic Metrics — Đánh giá Toán học Cụm Vector)
+
 * **Silhouette Score:** Đánh giá độ gắn kết nội cụm (Cohesion) và độ phân tách giữa các cụm (Separation) trong không gian vector 768 chiều.
 * **Diversity Score:** $1 - \text{mean}(\text{Cosine\_Sim}(\text{selected\_embeddings}))$. Đo độ phong phú và chống lặp ngữ nghĩa giữa các câu được chọn.
 
 ### 3.2. Độ đo Ngoại tại (Extrinsic Metrics — Đánh giá Ngôn ngữ Con người)
+
 * **ROUGE-1, ROUGE-2, ROUGE-L:** Đo mức độ trùng lặp n-gram với bản tóm tắt mẫu (Reference Highlights).
 * **BERTScore F1:** Đo tương đồng ngữ nghĩa cấp độ vector giữa bản tóm tắt máy và bản tóm tắt mẫu.
 * **G-Eval (LLM-as-Judge):** Đánh giá 4 tiêu chí Coherence, Consistency, Fluency, Relevance (EMNLP 2023).
 
 ### 3.3. Bảng Ma trận Đánh giá So sánh (Đưa vào Báo cáo)
 
-| Mô hình SBERT | Intrinsic: Silhouette Score | Intrinsic: Diversity Score | Extrinsic: ROUGE-1 | Extrinsic: ROUGE-2 | Extrinsic: ROUGE-L | Extrinsic: BERTScore F1 | Đánh giá Chuyên môn |
-|---|---|---|---|---|---|---|---|
-| **Lead-3 Baseline** | - | - | 0.365 | 0.142 | 0.320 | 0.812 | Baseline tin tức đơn giản |
-| **TextRank Baseline** | 0.18 | 0.65 | 0.351 | 0.130 | 0.311 | 0.805 | Baseline đồ thị |
-| **SBERT Pretrained Gốc** | 0.24 | 0.78 | 0.382 | 0.154 | 0.341 | 0.835 | Vector tổng quát |
-| **SBERT Fine-Tuned** ⭐ | **0.31** | **0.84** | **0.425** | **0.189** | **0.380** | **0.868** | **Cụm vector sắc nét hơn, K-Means gom cụm và tóm tắt chuẩn xác nhất** |
+| Mô hình SBERT                 | Intrinsic: Silhouette Score | Intrinsic: Diversity Score | Extrinsic: ROUGE-1 | Extrinsic: ROUGE-2 | Extrinsic: ROUGE-L | Extrinsic: BERTScore F1 | Đánh giá Chuyên môn                                                               |
+| ------------------------------- | --------------------------- | -------------------------- | ------------------ | ------------------ | ------------------ | ----------------------- | -------------------------------------------------------------------------------------- |
+| **Lead-3 Baseline**       | -                           | -                          | 0.365              | 0.142              | 0.320              | 0.812                   | Baseline tin tức đơn giản                                                          |
+| **TextRank Baseline**     | 0.18                        | 0.65                       | 0.351              | 0.130              | 0.311              | 0.805                   | Baseline đồ thị                                                                     |
+| **SBERT Pretrained Gốc** | 0.24                        | 0.78                       | 0.382              | 0.154              | 0.341              | 0.835                   | Vector tổng quát                                                                     |
+| **SBERT Fine-Tuned** ⭐   | **0.31**              | **0.84**             | **0.425**    | **0.189**    | **0.380**    | **0.868**         | **Cụm vector sắc nét hơn, K-Means gom cụm và tóm tắt chuẩn xác nhất** |
 
 ---
 
 ## 4. Tự động Nhận diện Ngôn ngữ & Rule-based K
 
 ### 4.1. Auto Language Detection
+
 Backend FastAPI tích hợp `langdetect` ($< 1$ms, độ chính xác $99.9\%$):
 
 ```python
@@ -109,18 +115,19 @@ def resolve_language(text, user_lang_choice='auto'):
 ```
 
 ### 4.2. Rule-based $K$ với Buffer đệm
+
 ```python
 def compute_k_adaptive(n_sentences, lang='vi', summary_length='medium', enable_buffer=True):
     if n_sentences < 4:
         return n_sentences
-        
+      
     optimal_alpha = 0.25  # Kết quả Grid Search từ Phase 1.2
     length_scales = {'brief': 0.7, 'medium': 1.0, 'detailed': 1.4}
     scale = length_scales.get(summary_length, 1.0)
-    
+  
     target_k = int(round(n_sentences * optimal_alpha * scale))
     target_k = max(2, min(10, target_k))
-    
+  
     # Buffer +2 câu cho K-Means để bù đắp lượng câu bị loại ở bước Post-filtering
     kmeans_k = target_k + 2 if (enable_buffer and n_sentences > 6) else target_k
     return min(n_sentences, kmeans_k)
@@ -156,13 +163,13 @@ def embed_sentences(sentences, lang='vi'):
 def kmeans_summarize(sentences, embeddings, k):
     k = min(k, len(sentences))
     if k <= 0: return [], [], [], 0.0
-    
+  
     kmeans = KMeans(n_clusters=k, random_state=42, n_init=10).fit(embeddings)
     centroids = kmeans.cluster_centers_
-    
+  
     # Tính Intrinsic Score (Silhouette Score)
     sil_score = silhouette_score(embeddings, kmeans.labels_) if len(sentences) > k > 1 else 0.0
-    
+  
     selected_indices, selected_sentences, selected_embeddings = [], [], []
 
     for cluster_idx in range(k):
@@ -198,10 +205,11 @@ def reorder_by_original(selected_indices, selected_sentences):
 👉 **GIẢI PHÁP TỐI ƯU NHẤT: KẾT HỢP CẢ HAI (Dùng đúng điểm mạnh của từng môi trường)**
 
 * **Giai đoạn 1 (Fine-tune SBERT & Chạy Đánh giá Metrics) $\rightarrow$ DÙNG GOOGLE COLAB GPU:**
+
   * *Lý do:* Bước Fine-tune SBERT và bước chạy ma trận 200 bài test set đòi hỏi tính toán mạng nơ-ron nặng. Dùng GPU T4 miễn phí trên Colab giúp bạn **rút ngắn thời gian từ 2 tiếng xuống chỉ còn 10-15 phút**.
   * *Cách làm:* Sau khi chạy Fine-tune và đánh giá xong trên Colab, bạn tải thư mục weights `my_finetuned_sbert_vi` về lưu trên máy local.
-
 * **Giai đoạn 2 (Phát triển Web React + FastAPI) $\rightarrow$ DÙNG MÁY LOCAL (VS Code):**
+
   * *Lý do:* Chạy React (`npm run dev`) và FastAPI (`uvicorn`) trên máy local cho tốc độ nạp trang tức thì, dễ dàng sửa code UI/UX. Nếu chạy Web trên Colab sẽ rất bất tiện vì hay bị gián đoạn ngrok và ngắt kết nối (timeout) giữa chừng.
 
 ### 6.2. Chiến lược Đóng gói Docker & Deploy VPS

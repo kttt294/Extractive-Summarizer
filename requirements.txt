@@ -1,0 +1,24 @@
+# Core NLP & ML
+torch>=2.0.0
+transformers>=4.30.0
+sentence-transformers>=2.2.2
+scikit-learn>=1.2.0
+numpy>=1.24.0
+
+# Datasets & Tokenization
+datasets>=2.14.0
+nltk>=3.8.1
+underthesea>=6.6.0
+langdetect>=1.0.9
+rouge-score>=0.1.2
+bert-score>=0.3.13
+
+# Baseline
+sumy>=0.11.0
+
+# API & Web (Phase 2)
+fastapi>=0.100.0
+uvicorn>=0.22.0
+requests>=2.31.0
+beautifulsoup4>=4.12.0
+newspaper3k>=0.2.8
