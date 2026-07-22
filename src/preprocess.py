@@ -2,7 +2,7 @@ import nltk
 from langdetect import detect
 from src.config import OPTIMAL_HYPERPARAMS
 
-# Download NLTK tokenizer models if needed
+# Tải bộ tách câu của NLTK nếu chưa có
 try:
     nltk.data.find('tokenizers/punkt')
 except LookupError:
@@ -11,15 +11,15 @@ except LookupError:
 try:
     from underthesea import sent_tokenize as sent_tokenize_vi
 except ImportError:
-    # Fallback to splitlines if underthesea is not installed
+    # Dự phòng nếu chưa cài underthesea
     def sent_tokenize_vi(text):
         return [s.strip() for s in text.split('.') if s.strip()]
 
 
 def resolve_language(text: str, user_choice: str = 'auto') -> str:
     """
-    Detects language ('en' or 'vi') automatically using langdetect
-    or returns user_choice if specified.
+    Tự động phát hiện ngôn ngữ ('en' hoặc 'vi') bằng langdetect
+    hoặc trả về lựa chọn thủ công của người dùng.
     """
     if user_choice in ['en', 'vi']:
         return user_choice
@@ -28,13 +28,13 @@ def resolve_language(text: str, user_choice: str = 'auto') -> str:
         detected = detect(text)
         return 'en' if detected == 'en' else 'vi'
     except Exception:
-        return 'vi'  # Default to Vietnamese on failure
+        return 'vi'  # Mặc định tiếng Việt nếu có lỗi
 
 
 def preprocess_text(text: str, lang: str = 'vi'):
     """
-    Sentence tokenization and filtering based on sentence length.
-    Returns: List of tuples [(original_index, cleaned_sentence_text)]
+    Tách câu và lọc câu dựa trên độ dài từ.
+    Trả về: Danh sách các tuple [(chỉ_số_gốc, nội_dung_câu)]
     """
     if lang == 'en':
         raw_sentences = nltk.sent_tokenize(text)
@@ -49,7 +49,7 @@ def preprocess_text(text: str, lang: str = 'vi'):
         cleaned = sent.strip()
         word_count = len(cleaned.split())
         
-        # Filter out URLs, very short or excessively long sentences
+        # Loại bỏ URL, các câu quá ngắn hoặc quá dài
         if min_w <= word_count <= max_w and not cleaned.startswith(('http://', 'https://')):
             filtered_sentences.append((idx, cleaned))
 

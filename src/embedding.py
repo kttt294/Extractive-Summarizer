@@ -8,7 +8,7 @@ _LOADED_MODELS = {}
 
 def get_sbert_model(lang: str = 'vi', use_finetuned: bool = False) -> SentenceTransformer:
     """
-    Singleton loader for SentenceTransformer models (Pretrained or Fine-Tuned).
+    Nạp mô hình SentenceTransformer theo dạng Singleton (Pretrained hoặc Fine-Tuned).
     """
     key = f"{lang}_{'finetuned' if use_finetuned else 'pretrained'}"
     if key in _LOADED_MODELS:
@@ -17,12 +17,12 @@ def get_sbert_model(lang: str = 'vi', use_finetuned: bool = False) -> SentenceTr
     if use_finetuned:
         model_path = MODEL_CONFIGS['finetuned_vi'] if lang == 'vi' else MODEL_CONFIGS['finetuned_en']
         if not os.path.exists(model_path):
-            print(f"Fine-tuned model not found at {model_path}. Fallback to pretrained model.")
+            print(f"Không tìm thấy mô hình Fine-tuned tại {model_path}. Tự động chuyển sang mô hình Pretrained gốc.")
             model_path = MODEL_CONFIGS[lang]
     else:
         model_path = MODEL_CONFIGS[lang]
 
-    print(f"Loading SBERT model: {model_path} ...")
+    print(f"Đang nạp mô hình SBERT: {model_path} ...")
     model = SentenceTransformer(model_path)
     _LOADED_MODELS[key] = model
     return model
@@ -30,8 +30,8 @@ def get_sbert_model(lang: str = 'vi', use_finetuned: bool = False) -> SentenceTr
 
 def embed_sentences(sentences: List[Tuple[int, str]], lang: str = 'vi', use_finetuned: bool = False) -> np.ndarray:
     """
-    Generates SBERT sentence embeddings for a list of (original_index, text) tuples.
-    Returns: numpy array of shape (N, 768) or (N, 384)
+    Trích xuất vector nhúng SBERT cho danh sách các tuple (chỉ_số_gốc, văn_bản).
+    Trả về: Numpy array kích thước (N, 768) hoặc (N, 384).
     """
     if not sentences:
         return np.array([])

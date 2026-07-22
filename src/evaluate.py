@@ -1,7 +1,6 @@
 import numpy as np
 from typing import List, Dict
 from rouge_score import rouge_scorer
-from bert_score import score as bert_score_fn
 from sumy.parsers.plaintext import PlaintextParser
 from sumy.nlp.tokenizers import Tokenizer
 from sumy.summarizers.text_rank import TextRankSummarizer
@@ -13,26 +12,25 @@ from src.dataset import load_evaluation_dataset
 
 
 def run_lead3_baseline(sentences: List[tuple]) -> List[str]:
-    """Lead-3 Baseline: Takes top 3 original sentences."""
+    """Lead-3 Baseline: Lấy 3 câu đầu tiên của bài báo."""
     return [text for _, text in sentences[:3]]
 
 
 def run_textrank_baseline(text: str, n_sentences: int = 3, lang: str = 'en') -> List[str]:
-    """TextRank Baseline via Sumy."""
+    """TextRank Baseline qua thư viện Sumy."""
     try:
         parser = PlaintextParser.from_string(text, Tokenizer("english" if lang == 'en' else "vietnamese"))
         summarizer = TextRankSummarizer()
         summary_sents = summarizer(parser.document, n_sentences)
         return [str(s) for s in summary_sents]
     except Exception:
-        # Fallback to lead-3 on failure
         return [s for _, s in preprocess_text(text, lang=lang)[:n_sentences]]
 
 
 def run_sbert_pipeline(text: str, lang: str = 'en', use_finetuned: bool = False):
     """
-    Runs full Extractive Summarization Pipeline:
-    Preprocess -> SBERT Embedding -> Adaptive K -> K-Means + Post-filtering -> Original Order Reordering.
+    Chạy toàn bộ Pipeline Tóm tắt Trích xuất:
+    Tiền xử lý -> SBERT Embedding -> K thích ứng -> K-Means + Lọc trùng -> Sắp xếp lại thứ tự gốc.
     """
     sentences = preprocess_text(text, lang=lang)
     if len(sentences) == 0:
@@ -53,19 +51,19 @@ def run_sbert_pipeline(text: str, lang: str = 'en', use_finetuned: bool = False)
 
 def evaluate_framework(lang: str = 'en', sample_count: int = 50):
     """
-    Runs Dual-Evaluation Framework (Intrinsic + Extrinsic) comparing:
+    Chạy Khung Đánh giá Kép (Intrinsic + Extrinsic) so sánh:
     1. Lead-3 Baseline
     2. TextRank Baseline
     3. Pretrained SBERT
     4. Fine-Tuned SBERT
     """
     print(f"\n==========================================")
-    print(f"  RUNNING DUAL EVALUATION FRAMEWORK ({lang.upper()})")
+    print(f"  CHẠY KHUNG ĐÁNH GIÁ KÉP (NGÔN NGỮ {lang.upper()})")
     print(f"==========================================")
 
     test_samples = load_evaluation_dataset(lang=lang, sample_count=sample_count)
     if not test_samples:
-        print("No test samples loaded.")
+        print("Không tìm thấy dữ liệu thử nghiệm.")
         return
 
     scorer = rouge_scorer.RougeScorer(['rouge1', 'rouge2', 'rougeL'], use_stemmer=True)
@@ -110,9 +108,9 @@ def evaluate_framework(lang: str = 'en', sample_count: int = 50):
         results['FineTuned-SBERT']['sil'].append(sil_ft)
         results['FineTuned-SBERT']['div'].append(div_ft)
 
-    # Print Final Evaluation Table
+    # In Bảng Kết quả Đánh giá
     print("\n" + "=" * 90)
-    print(f"{'Model':<20} | {'Silhouette':<10} | {'Diversity':<10} | {'ROUGE-1':<10} | {'ROUGE-2':<10} | {'ROUGE-L':<10}")
+    print(f"{'Mô hình':<20} | {'Silhouette':<10} | {'Diversity':<10} | {'ROUGE-1':<10} | {'ROUGE-2':<10} | {'ROUGE-L':<10}")
     print("=" * 90)
 
     for m in models_to_test:

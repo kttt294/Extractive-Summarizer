@@ -8,7 +8,7 @@ from src.config import OPTIMAL_HYPERPARAMS
 
 def compute_k_adaptive(n_sentences: int, summary_length: str = 'medium', enable_buffer: bool = True) -> int:
     """
-    Computes dynamic K with post-filtering buffer.
+    Tính toán số cụm K thích ứng có kèm theo hệ số đệm lọc trùng (Buffer K).
     """
     if n_sentences < 4:
         return n_sentences
@@ -30,8 +30,8 @@ def compute_k_adaptive(n_sentences: int, summary_length: str = 'medium', enable_
 
 def kmeans_cluster(sentences: List[Tuple[int, str]], embeddings: np.ndarray, k: int) -> Tuple[List[int], List[str], List[np.ndarray], float]:
     """
-    Performs K-Means clustering and selects the sentence closest to each centroid.
-    Calculates Intrinsic Metric: Silhouette Score.
+    Thực hiện phân cụm K-Means và chọn câu nằm gần tâm cụm nhất.
+    Tính toán Chỉ số Nội tại (Intrinsic Metric): Silhouette Score.
     """
     k = min(k, len(sentences))
     if k <= 0 or len(sentences) == 0:
@@ -41,7 +41,7 @@ def kmeans_cluster(sentences: List[Tuple[int, str]], embeddings: np.ndarray, k: 
     kmeans.fit(embeddings)
     centroids = kmeans.cluster_centers_
 
-    # Calculate Silhouette Score (Intrinsic Metric)
+    # Tính chỉ số Silhouette Score (Nội tại)
     sil_score = 0.0
     if 1 < k < len(sentences):
         try:
@@ -74,7 +74,7 @@ def kmeans_cluster(sentences: List[Tuple[int, str]], embeddings: np.ndarray, k: 
 
 def filter_redundant(indices: List[int], sents: List[str], embs: List[np.ndarray], threshold: float = None) -> Tuple[List[int], List[str], List[np.ndarray]]:
     """
-    Post-filtering step to remove redundant sentences using Cosine Similarity threshold.
+    Bước lọc sau (Post-filtering) loại bỏ các câu trùng lặp ngữ nghĩa dựa trên ngưỡng Cosine Similarity.
     """
     if threshold is None:
         threshold = OPTIMAL_HYPERPARAMS['theta']
@@ -99,7 +99,7 @@ def filter_redundant(indices: List[int], sents: List[str], embs: List[np.ndarray
 
 def reorder_by_original(indices: List[int], sents: List[str]) -> List[str]:
     """
-    Reorders selected summary sentences back to their original position order in the article.
+    Sắp xếp lại các câu tóm tắt được chọn về đúng thứ tự vị trí xuất hiện ban đầu trong bài báo.
     """
     paired = sorted(zip(indices, sents), key=lambda x: x[0])
     return [s for _, s in paired]
@@ -107,7 +107,7 @@ def reorder_by_original(indices: List[int], sents: List[str]) -> List[str]:
 
 def diversity_score(embeddings: List[np.ndarray]) -> float:
     """
-    Calculates Diversity Score (1 - mean(pairwise cosine similarities)).
+    Tính chỉ số Đa dạng (Diversity Score = 1 - trung bình cộng Cosine Similarity giữa các cặp câu).
     """
     n = len(embeddings)
     if n < 2:
