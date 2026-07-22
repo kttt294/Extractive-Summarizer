@@ -11,7 +11,7 @@ Mô hình tóm tắt văn bản trích xuất (Extractive Summarization) song ng
    - **Ngoại tại (Extrinsic Metrics):** ROUGE-1, ROUGE-2, ROUGE-L, BERTScore F1, G-Eval.
 2. **Fine-Tuning SBERT (Bài toán Regression with CosineSimilarityLoss):**
    - Giải quyết triệt để góp ý của Giảng viên ở buổi Giữa kỳ.
-   - Tăng ROUGE-1 từ $38.2\%$ lên $\mathbf{42.5\%}$ ($+4.3\%$).
+   - Tăng ROUGE-1 từ $38.2\%$ lên $\mathbf{42.5\%}$ ($+4.3\%$).paepepdaudat sutdu
 3. **Sản phẩm Web App Full-Stack (FastAPI + React + TailwindCSS):**
    - Tự động nhận diện ngôn ngữ bài viết (`langdetect`).
    - Tóm tắt qua đoạn văn thô, đường link URL bài báo (`newspaper3k`), hoặc theo từ khóa chủ đề.

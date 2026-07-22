@@ -14,20 +14,20 @@ for resource in ['punkt', 'punkt_tab']:
 
 def load_evaluation_dataset(lang: str = 'en', sample_count: int = 200):
     """
-    Nạp dữ liệu thử nghiệm với Fallback URI mới nhất của Hugging Face Hub:
-    - Tiếng Anh: cnn_dailymail v3.0.0
-    - Tiếng Việt: vietnews / bkai-foundation-models/vietnews
+    Nạp dữ liệu thử nghiệm chuẩn cho Hugging Face Hub Datasets v3+:
+    - Tiếng Anh: abisee/cnn_dailymail hoặc cnn_dailymail v3.0.0
+    - Tiếng Việt: bkai-foundation-models/vietnews hoặc vietnews
     """
     print(f"Đang nạp bộ dữ liệu thử nghiệm {lang.upper()} (số lượng={sample_count})...")
     if lang == 'en':
         ds = None
         for dataset_name in ["abisee/cnn_dailymail", "cnn_dailymail"]:
             try:
-                ds = load_dataset(dataset_name, "3.0.0", split="test", trust_remote_code=True)
+                ds = load_dataset(dataset_name, "3.0.0", split="test")
                 if ds is not None:
                     break
-            except Exception as e:
-                print(f"Nạp {dataset_name} không thành công: {e}. Thử phương án tiếp theo...")
+            except Exception:
+                pass
 
         if ds is not None:
             samples = ds.select(range(min(sample_count, len(ds))))
@@ -51,7 +51,7 @@ def load_evaluation_dataset(lang: str = 'en', sample_count: int = 200):
         ds = None
         for dataset_name in ["bkai-foundation-models/vietnews", "vietnews"]:
             try:
-                ds = load_dataset(dataset_name, split="test", trust_remote_code=True)
+                ds = load_dataset(dataset_name, split="test")
                 if ds is not None:
                     break
             except Exception:
