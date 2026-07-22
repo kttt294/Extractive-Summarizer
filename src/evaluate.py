@@ -27,9 +27,40 @@ def run_textrank_baseline(text: str, n_sentences: int = 3, lang: str = 'en') -> 
         return [s for _, s in preprocess_text(text, lang=lang)[:n_sentences]]
 
 
+def run_sbert_no_kmeans_pipeline(text: str, lang: str = 'en', use_finetuned: bool = False):
+    """
+    Biến thể Ablation Study: Fine-Tuned SBERT + Direct Top-K (Không có K-Means).
+    Lấy Top-K câu có khoảng cách Cosine gần nhất với Vector trung bình toàn bài báo.
+    """
+    sentences = preprocess_text(text, lang=lang)
+    if len(sentences) == 0:
+        return "", [], 0.0, 0.0
+
+    embeddings = embed_sentences(sentences, lang=lang, use_finetuned=use_finetuned)
+    k = compute_k_adaptive(len(sentences))
+
+    # Tính Vector trung bình toàn bài báo (Document Centroid)
+    doc_embedding = np.mean(embeddings, axis=0)
+    
+    # Tính Cosine Similarity của từng câu với Document Centroid
+    from sklearn.metrics.pairwise import cosine_similarity
+    sims = cosine_similarity(embeddings, doc_embedding.reshape(1, -1)).flatten()
+    
+    # Lấy Top-K câu có similarity cao nhất
+    top_k_indices = np.argsort(sims)[-k:][::-1]
+    top_k_indices = sorted(top_k_indices)
+    
+    selected_sents = [sentences[idx][1] for idx in top_k_indices]
+    selected_embs = embeddings[top_k_indices]
+    
+    div_score = diversity_score(selected_embs)
+    summary_text = " ".join(selected_sents)
+    return summary_text, selected_sents, 0.0, div_score
+
+
 def run_sbert_pipeline(text: str, lang: str = 'en', use_finetuned: bool = False):
     """
-    Chạy toàn bộ Pipeline Tóm tắt Trích xuất:
+    Chạy toàn bộ Pipeline 2 Giai đoạn:
     Tiền xử lý -> SBERT Embedding -> K thích ứng -> K-Means + Lọc trùng -> Sắp xếp lại thứ tự gốc.
     """
     sentences = preprocess_text(text, lang=lang)
@@ -51,14 +82,14 @@ def run_sbert_pipeline(text: str, lang: str = 'en', use_finetuned: bool = False)
 
 def evaluate_framework(lang: str = 'en', sample_count: int = 50):
     """
-    Chạy Khung Đánh giá Kép (Intrinsic + Extrinsic) so sánh:
+    Chạy Khung Đánh giá Kép (Intrinsic + Extrinsic) & Ablation Study so sánh:
     1. Lead-3 Baseline
     2. TextRank Baseline
-    3. Pretrained SBERT
-    4. Fine-Tuned SBERT
+    3. FineTuned-SBERT + Direct Top-K (No K-Means) [Ablation Study]
+    4. FineTuned-SBERT + K-Means (Full Model)
     """
     print(f"\n==========================================")
-    print(f"  CHẠY KHUNG ĐÁNH GIÁ KÉP (NGÔN NGỮ {lang.upper()})")
+    print(f"  CHẠY KHUNG ĐÁNH GIÁ THỰC NGHIỆM (NGÔN NGỮ {lang.upper()})")
     print(f"==========================================")
 
     test_samples = load_evaluation_dataset(lang=lang, sample_count=sample_count)
@@ -68,7 +99,7 @@ def evaluate_framework(lang: str = 'en', sample_count: int = 50):
 
     scorer = rouge_scorer.RougeScorer(['rouge1', 'rouge2', 'rougeL'], use_stemmer=True)
 
-    models_to_test = ['Lead-3', 'TextRank', 'Pretrained-SBERT', 'FineTuned-SBERT']
+    models_to_test = ['Lead-3', 'TextRank', 'SBERT-No-KMeans', 'FineTuned-SBERT-KMeans']
     results = {m: {'r1': [], 'r2': [], 'rl': [], 'sil': [], 'div': []} for m in models_to_test}
 
     for idx, sample in enumerate(test_samples):
@@ -90,37 +121,36 @@ def evaluate_framework(lang: str = 'en', sample_count: int = 50):
         results['TextRank']['r2'].append(s_tr['rouge2'].fmeasure)
         results['TextRank']['rl'].append(s_tr['rougeL'].fmeasure)
 
-        # 3. Pretrained SBERT
-        p_summary, _, sil_p, div_p = run_sbert_pipeline(article, lang=lang, use_finetuned=False)
-        s_p = scorer.score(reference, p_summary)
-        results['Pretrained-SBERT']['r1'].append(s_p['rouge1'].fmeasure)
-        results['Pretrained-SBERT']['r2'].append(s_p['rouge2'].fmeasure)
-        results['Pretrained-SBERT']['rl'].append(s_p['rougeL'].fmeasure)
-        results['Pretrained-SBERT']['sil'].append(sil_p)
-        results['Pretrained-SBERT']['div'].append(div_p)
+        # 3. SBERT-No-KMeans (Ablation Study)
+        nokm_summary, _, _, div_nokm = run_sbert_no_kmeans_pipeline(article, lang=lang, use_finetuned=True)
+        s_nokm = scorer.score(reference, nokm_summary)
+        results['SBERT-No-KMeans']['r1'].append(s_nokm['rouge1'].fmeasure)
+        results['SBERT-No-KMeans']['r2'].append(s_nokm['rouge2'].fmeasure)
+        results['SBERT-No-KMeans']['rl'].append(s_nokm['rougeL'].fmeasure)
+        results['SBERT-No-KMeans']['div'].append(div_nokm)
 
-        # 4. Fine-Tuned SBERT
+        # 4. Fine-Tuned SBERT + K-Means (Full Proposed Model)
         ft_summary, _, sil_ft, div_ft = run_sbert_pipeline(article, lang=lang, use_finetuned=True)
         s_ft = scorer.score(reference, ft_summary)
-        results['FineTuned-SBERT']['r1'].append(s_ft['rouge1'].fmeasure)
-        results['FineTuned-SBERT']['r2'].append(s_ft['rouge2'].fmeasure)
-        results['FineTuned-SBERT']['rl'].append(s_ft['rougeL'].fmeasure)
-        results['FineTuned-SBERT']['sil'].append(sil_ft)
-        results['FineTuned-SBERT']['div'].append(div_ft)
+        results['FineTuned-SBERT-KMeans']['r1'].append(s_ft['rouge1'].fmeasure)
+        results['FineTuned-SBERT-KMeans']['r2'].append(s_ft['rouge2'].fmeasure)
+        results['FineTuned-SBERT-KMeans']['rl'].append(s_ft['rougeL'].fmeasure)
+        results['FineTuned-SBERT-KMeans']['sil'].append(sil_ft)
+        results['FineTuned-SBERT-KMeans']['div'].append(div_ft)
 
     # In Bảng Kết quả Đánh giá
     print("\n" + "=" * 90)
-    print(f"{'Mô hình':<20} | {'Silhouette':<10} | {'Diversity':<10} | {'ROUGE-1':<10} | {'ROUGE-2':<10} | {'ROUGE-L':<10}")
+    print(f"{'Mô hình':<25} | {'Silhouette':<10} | {'Diversity':<10} | {'ROUGE-1':<10} | {'ROUGE-2':<10} | {'ROUGE-L':<10}")
     print("=" * 90)
 
     for m in models_to_test:
         sil_m = np.mean(results[m]['sil']) if results[m]['sil'] else 0.0
         div_m = np.mean(results[m]['div']) if results[m]['div'] else 0.0
-        r1_m = np.mean(results[m]['r1'])
-        r2_m = np.mean(results[m]['r2'])
-        rl_m = np.mean(results[m]['rl'])
+        r1_m = np.mean(results[m]['r1']) * 100
+        r2_m = np.mean(results[m]['r2']) * 100
+        rl_m = np.mean(results[m]['rl']) * 100
 
-        print(f"{m:<20} | {sil_m:<10.4f} | {div_m:<10.4f} | {r1_m:<10.4f} | {r2_m:<10.4f} | {rl_m:<10.4f}")
+        print(f"{m:<25} | {sil_m:<10.4f} | {div_m:<10.4f} | {r1_m:<10.4f}% | {r2_m:<10.4f}% | {rl_m:<10.4f}%")
 
     print("=" * 90 + "\n")
 
