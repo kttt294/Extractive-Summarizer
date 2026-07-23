@@ -10,7 +10,7 @@ def compute_k_adaptive(n_sentences: int, summary_length: str = 'medium', enable_
     """
     Tính toán số cụm K thích ứng có kèm theo hệ số đệm lọc trùng (Buffer K).
     """
-    if n_sentences < 4:
+    if n_sentences < 3:
         return n_sentences
 
     alpha = OPTIMAL_HYPERPARAMS['alpha']
@@ -18,9 +18,9 @@ def compute_k_adaptive(n_sentences: int, summary_length: str = 'medium', enable_
     scale = scales.get(summary_length, 1.0)
 
     target_k = int(round(n_sentences * alpha * scale))
-    target_k = max(2, min(10, target_k))
+    target_k = max(3, min(6, target_k))
 
-    if enable_buffer and n_sentences > 6:
+    if enable_buffer and n_sentences > 5:
         kmeans_k = target_k + OPTIMAL_HYPERPARAMS['buffer_k']
     else:
         kmeans_k = target_k
@@ -30,7 +30,7 @@ def compute_k_adaptive(n_sentences: int, summary_length: str = 'medium', enable_
 
 def kmeans_cluster(sentences: List[Tuple[int, str]], embeddings: np.ndarray, k: int) -> Tuple[List[int], List[str], List[np.ndarray], float]:
     """
-    Thực hiện phân cụm K-Means và chọn câu nằm gần tâm cụm nhất.
+    Thực hiện phân cụm K-Means và chọn câu nằm gần tâm cụm nhất có kết hợp Position-Aware Weighting.
     Tính toán Chỉ số Nội tại (Intrinsic Metric): Silhouette Score.
     """
     k = min(k, len(sentences))
@@ -63,7 +63,11 @@ def kmeans_cluster(sentences: List[Tuple[int, str]], embeddings: np.ndarray, k: 
 
         centroid = centroids[cluster_idx].reshape(1, -1)
         sims = cosine_similarity(cluster_embs, centroid).flatten()
-        best_idx = int(np.argmax(sims))
+
+        # Position-Aware Weighting: Kết hợp độ tương đồng tâm cụm và vị trí ưu tiên báo chí
+        pos_weights = np.array([1.0 / np.sqrt(sent_tuple[0] + 1) for sent_tuple in cluster_sents])
+        combined_scores = sims + 0.35 * pos_weights
+        best_idx = int(np.argmax(combined_scores))
 
         selected_indices.append(cluster_sents[best_idx][0])
         selected_sentences.append(cluster_sents[best_idx][1])
@@ -72,9 +76,10 @@ def kmeans_cluster(sentences: List[Tuple[int, str]], embeddings: np.ndarray, k: 
     return selected_indices, selected_sentences, selected_embeddings, sil_score
 
 
-def filter_redundant(indices: List[int], sents: List[str], embs: List[np.ndarray], threshold: float = None) -> Tuple[List[int], List[str], List[np.ndarray]]:
+def filter_redundant(indices: List[int], sents: List[str], embs: List[np.ndarray], threshold: float = None, target_sents: int = 3) -> Tuple[List[int], List[str], List[np.ndarray]]:
     """
     Bước lọc sau (Post-filtering) loại bỏ các câu trùng lặp ngữ nghĩa dựa trên ngưỡng Cosine Similarity.
+    Giữ lại đúng target_sents câu tinh hoa (mặc định 3 câu) để khớp tỷ lệ nén chuẩn 20-25%.
     """
     if threshold is None:
         threshold = OPTIMAL_HYPERPARAMS['theta']
@@ -84,7 +89,7 @@ def filter_redundant(indices: List[int], sents: List[str], embs: List[np.ndarray
         is_redundant = False
         for j in keep_indices:
             sim = cosine_similarity([embs[i]], [embs[j]])[0][0]
-            if sim > threshold:
+            if sim > threshold and len(keep_indices) >= target_sents:
                 is_redundant = True
                 break
         if not is_redundant:

@@ -34,18 +34,23 @@ def resolve_language(text: str, user_choice: str = 'auto') -> str:
 def preprocess_text(text: str, lang: str = 'vi'):
     """
     Tách câu và lọc câu dựa trên độ dài từ.
-    Trả về: Danh sách các tuple [(chỉ_số_gốc, nội_dung_câu)]
+    Tự động tách các đoạn văn bản (paragraphs / linebreaks) để tránh dính nhiều đoạn thành 1 câu.
     """
-    if lang == 'en':
-        try:
-            raw_sentences = nltk.sent_tokenize(text)
-        except Exception:
-            raw_sentences = [s.strip() for s in text.split('.') if s.strip()]
-    else:
-        try:
-            raw_sentences = sent_tokenize_vi(text)
-        except Exception:
-            raw_sentences = [s.strip() for s in text.split('.') if s.strip()]
+    lines = [line.strip() for line in text.split('\n') if line.strip()]
+    raw_sentences = []
+    
+    for line in lines:
+        if lang == 'en':
+            try:
+                sents = nltk.sent_tokenize(line)
+            except Exception:
+                sents = [s.strip() for s in line.split('.') if s.strip()]
+        else:
+            try:
+                sents = sent_tokenize_vi(line)
+            except Exception:
+                sents = [s.strip() for s in line.split('.') if s.strip()]
+        raw_sentences.extend(sents)
 
     min_w = OPTIMAL_HYPERPARAMS['min_words']
     max_w = OPTIMAL_HYPERPARAMS['max_words']
@@ -57,6 +62,6 @@ def preprocess_text(text: str, lang: str = 'vi'):
         
         # Loại bỏ URL, các câu quá ngắn hoặc quá dài
         if min_w <= word_count <= max_w and not cleaned.startswith(('http://', 'https://')):
-            filtered_sentences.append((idx, cleaned))
+            filtered_sentences.append((len(filtered_sentences), cleaned))
 
     return filtered_sentences

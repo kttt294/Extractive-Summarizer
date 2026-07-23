@@ -1,3 +1,21 @@
+import os
+import warnings
+import logging
+
+os.environ["TRANSFORMERS_VERBOSITY"] = "error"
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+warnings.filterwarnings("ignore")
+
+try:
+    from transformers import logging as tf_logging
+    tf_logging.set_verbosity_error()
+except Exception:
+    pass
+
+logging.getLogger("transformers").setLevel(logging.ERROR)
+logging.getLogger("bert_score").setLevel(logging.ERROR)
+logging.getLogger("datasets").setLevel(logging.ERROR)
+
 import numpy as np
 from typing import List, Dict
 from rouge_score import rouge_scorer
@@ -111,7 +129,10 @@ def compute_bertscore_f1(summary: str, reference: str, lang: str = 'en') -> floa
 
 
 def evaluate_framework(lang: str = 'en', sample_count: int = 50):
-    print(f"Đánh giá với ngôn ngữ {lang.upper()} - Số lượng: {sample_count})")
+    divider = "=" * 98
+    print(f"\n{divider}")
+    print(f"  CHẠY KHUNG ĐÁNH GIÁ THỰC NGHIỆM (NGÔN NGỮ {lang.upper()} - SỐ LƯỢNG = {sample_count})")
+    print(f"{divider}")
 
     test_samples = load_evaluation_dataset(lang=lang, sample_count=sample_count, split='test')
     if not test_samples:

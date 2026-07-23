@@ -91,7 +91,6 @@ def load_evaluation_dataset(lang: str = 'en', sample_count: int = 200, split: st
     Nạp dữ liệu chuẩn từ Hugging Face Hub bằng Chiến thuật Lấy mẫu Phân tầng & Lọc Chất lượng.
     Tham số split: 'train' (cho Fine-Tuning) hoặc 'test' (cho Đánh giá độc lập).
     """
-    print(f"Đang nạp bộ dữ liệu {lang.upper()} [Split: {split}] bằng Chiến thuật Lấy mẫu Phân tầng (số lượng={sample_count})...")
     previous_verbosity = datasets.logging.get_verbosity()
     datasets.logging.set_verbosity_error()
     
@@ -108,7 +107,6 @@ def load_evaluation_dataset(lang: str = 'en', sample_count: int = 200, split: st
         if ds is not None:
             samples = apply_quality_stratified_sampling(ds, sample_count=sample_count, article_key='article', summary_key='highlights')
             datasets.logging.set_verbosity(previous_verbosity)
-            print(f"Đã nạp thành công {len(samples)} bài báo Tinh hoa {lang.upper()} [{split}] qua lọc phân tầng.")
             return samples
         else:
             datasets.logging.set_verbosity(previous_verbosity)
@@ -127,7 +125,6 @@ def load_evaluation_dataset(lang: str = 'en', sample_count: int = 200, split: st
         if ds is not None:
             samples = apply_quality_stratified_sampling(ds, sample_count=sample_count, article_key='article', summary_key='highlights')
             datasets.logging.set_verbosity(previous_verbosity)
-            print(f"Đã nạp thành công {len(samples)} bài báo Tinh hoa {lang.upper()} [{split}] qua lọc phân tầng.")
             return samples
         else:
             datasets.logging.set_verbosity(previous_verbosity)
