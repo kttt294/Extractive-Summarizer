@@ -1,8 +1,16 @@
 import os
+import warnings
+import logging
+import datasets
 from torch.utils.data import DataLoader
 from sentence_transformers import SentenceTransformer, losses
 from src.config import MODEL_CONFIGS, MODELS_DIR
 from src.dataset import load_evaluation_dataset, generate_oracle_extractive_pairs
+
+# Tắt warning logs của Hugging Face
+warnings.filterwarnings("ignore")
+datasets.logging.set_verbosity_error()
+logging.getLogger("datasets").setLevel(logging.ERROR)
 
 
 def train_finetune_sbert(lang: str = 'vi', epochs: int = 3, batch_size: int = 32, sample_data_count: int = 500):

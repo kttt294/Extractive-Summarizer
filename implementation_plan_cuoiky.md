@@ -120,7 +120,7 @@ def resolve_language(text, user_lang_choice='auto'):
 def compute_k_adaptive(n_sentences, lang='vi', summary_length='medium', enable_buffer=True):
     if n_sentences < 4:
         return n_sentences
-      
+  
     optimal_alpha = 0.25  # Kết quả Grid Search từ Phase 1.2
     length_scales = {'brief': 0.7, 'medium': 1.0, 'detailed': 1.4}
     scale = length_scales.get(summary_length, 1.0)
@@ -146,10 +146,10 @@ from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.metrics import silhouette_score
 import numpy as np
 
-# Load mô hình SBERT đã Fine-tune từ Giai đoạn 1.1
+# Load mô hình SBERT đã Fine-tune từ Giai đoạn 1.1 (Cả Tiếng Anh và Tiếng Việt)
 sbert_models = {
-    'en': SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2'),
-    'vi': SentenceTransformer('./my_finetuned_sbert_vi')
+    'en': SentenceTransformer('./models/finetuned_sbert_en'),
+    'vi': SentenceTransformer('./models/finetuned_sbert_vi')
 }
 
 def preprocess(text, lang='vi'):

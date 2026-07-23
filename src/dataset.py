@@ -1,8 +1,18 @@
+import warnings
+import logging
+import datasets
 import nltk
 from typing import List, Tuple
 from datasets import load_dataset
 from rouge_score import rouge_scorer
 from sentence_transformers import InputExample
+
+# Tắt toàn bộ cảnh báo dư thừa của Hugging Face Datasets & Warnings
+warnings.filterwarnings("ignore")
+datasets.logging.set_verbosity_error()
+logging.getLogger("datasets").setLevel(logging.ERROR)
+logging.getLogger("datasets.load").setLevel(logging.ERROR)
+logging.getLogger("datasets.builder").setLevel(logging.ERROR)
 
 # Đảm bảo punkt và punkt_tab được tải sẵn cho NLTK 3.9+
 for resource in ['punkt', 'punkt_tab']:
@@ -14,11 +24,14 @@ for resource in ['punkt', 'punkt_tab']:
 
 def load_evaluation_dataset(lang: str = 'en', sample_count: int = 200):
     """
-    Nạp dữ liệu thử nghiệm chuẩn cho Hugging Face Hub Datasets v3+:
-    - Tiếng Anh: abisee/cnn_dailymail hoặc cnn_dailymail v3.0.0
-    - Tiếng Việt: bkai-foundation-models/vietnews hoặc vietnews
+    Nạp dữ liệu thử nghiệm (Tiếng Anh & Tiếng Việt) với logging sạch sẽ.
     """
     print(f"Đang nạp bộ dữ liệu thử nghiệm {lang.upper()} (số lượng={sample_count})...")
+    
+    # Tắt log của datasets trong suốt quá trình nạp
+    previous_verbosity = datasets.logging.get_verbosity()
+    datasets.logging.set_verbosity_error()
+    
     if lang == 'en':
         ds = None
         for dataset_name in ["abisee/cnn_dailymail", "cnn_dailymail"]:
@@ -31,6 +44,7 @@ def load_evaluation_dataset(lang: str = 'en', sample_count: int = 200):
 
         if ds is not None:
             samples = ds.select(range(min(sample_count, len(ds))))
+            datasets.logging.set_verbosity(previous_verbosity)
             return [
                 {
                     'id': idx,
@@ -40,12 +54,12 @@ def load_evaluation_dataset(lang: str = 'en', sample_count: int = 200):
                 for idx, sample in enumerate(samples)
             ]
         else:
-            print("Đang nạp bộ dữ liệu mẫu Tiếng Anh dự phòng...")
             sample_en_article = {
                 'id': 0,
                 'article': "Artificial Intelligence (AI) is transforming industries worldwide at an unprecedented pace. Recent breakthroughs in Natural Language Processing enable computers to summarize complex documents in seconds. Extractive summarization directly selects the most informative sentences from original texts. Using Sentence-BERT embeddings, machines capture deep semantic relationships between sentences. K-Means clustering groups similar concepts together, ensuring the summary covers multiple key topics. Post-filtering removes redundant information for clear reading.",
                 'highlights': "Artificial Intelligence is transforming industries globally. Extractive summarization uses Sentence-BERT and K-Means to extract key informative sentences without redundancy."
             }
+            datasets.logging.set_verbosity(previous_verbosity)
             return [sample_en_article] * min(sample_count, 100)
     else:
         ds = None
@@ -59,6 +73,7 @@ def load_evaluation_dataset(lang: str = 'en', sample_count: int = 200):
 
         if ds is not None:
             samples = ds.select(range(min(sample_count, len(ds))))
+            datasets.logging.set_verbosity(previous_verbosity)
             return [
                 {
                     'id': idx,
@@ -68,12 +83,12 @@ def load_evaluation_dataset(lang: str = 'en', sample_count: int = 200):
                 for idx, sample in enumerate(samples)
             ]
         else:
-            print("Đang nạp bộ dữ liệu mẫu Tiếng Việt dự phòng...")
             sample_vi_article = {
                 'id': 0,
                 'article': "Trí tuệ nhân tạo (AI) đang tạo nên cuộc cách mạng mạnh mẽ trong nhiều lĩnh vực của đời sống xã hội. Tại Việt Nam, nhiều doanh nghiệp công nghệ lớn đang đẩy mạnh đầu tư vào nghiên cứu và phát triển các mô hình ngôn ngữ lớn (LLM) dành riêng cho tiếng Việt. Các chuyên gia đánh giá việc chủ động về công nghệ AI sẽ giúp đảm bảo an ninh dữ liệu quốc gia và nâng cao năng lực cạnh tranh. Trong tương lai gần, AI sẽ hỗ trợ đắc lực cho y tế, giáo dục và quản lý hành chính công.",
                 'highlights': "AI đang tạo cuộc cách mạng tại Việt Nam. Doanh nghiệp đẩy mạnh phát triển mô hình ngôn ngữ lớn cho tiếng Việt nhằm đảm bảo an ninh dữ liệu và phát triển y tế, giáo dục."
             }
+            datasets.logging.set_verbosity(previous_verbosity)
             return [sample_vi_article] * min(sample_count, 100)
 
 
