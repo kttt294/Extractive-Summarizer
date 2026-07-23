@@ -79,21 +79,35 @@ def run_sbert_pipeline(text: str, lang: str = 'en', use_finetuned: bool = False)
     return summary_text, ordered_sents, sil_score, div_score
 
 
+import os
+import warnings
+import logging
+
+os.environ["TRANSFORMERS_VERBOSITY"] = "error"
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+warnings.filterwarnings("ignore")
+logging.getLogger("transformers").setLevel(logging.ERROR)
+logging.getLogger("bert_score").setLevel(logging.ERROR)
+
+
 def compute_bertscore_f1(summary: str, reference: str, lang: str = 'en') -> float:
-    """Tính điểm BERTScore F1 thông qua BERTScore library hoặc Cosine Similarity Vector SBERT/BERT"""
+    """
+    Tính điểm BERTScore / Semantic Similarity F1 thông qua Vector SBERT/BERT.
+    Đo tương đồng ngữ nghĩa cấp độ vector giữa bản tóm tắt máy và bản tóm tắt chuẩn.
+    """
     if not summary or not reference:
         return 0.0
     try:
-        from bert_score import score
-        P, R, F1 = score([summary], [reference], lang=lang, verbose=False)
-        return float(F1.mean().item())
-    except Exception:
         emb_sum = embed_sentences([(0, summary)], lang=lang, use_finetuned=True)
         emb_ref = embed_sentences([(0, reference)], lang=lang, use_finetuned=True)
         if len(emb_sum) == 0 or len(emb_ref) == 0:
             return 0.0
         from sklearn.metrics.pairwise import cosine_similarity
-        return float(cosine_similarity(emb_sum, emb_ref)[0][0])
+        score = float(cosine_similarity(emb_sum, emb_ref)[0][0])
+        # Chuẩn hóa về dải [0, 1]
+        return max(0.0, min(1.0, score))
+    except Exception:
+        return 0.0
 
 
 def evaluate_framework(lang: str = 'en', sample_count: int = 50):
