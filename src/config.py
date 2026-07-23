@@ -1,6 +1,6 @@
 import os
 
-# Đường dẫn bộ mô hìnhPretrained và Fine-Tuned trên Hugging Face & Local
+# Đường dẫn bộ các hình Pretrained và Fine-Tuned trên Hugging Face & Local
 MODEL_CONFIGS = {
     'en': 'sentence-transformers/all-MiniLM-L6-v2',
     'vi': 'bkai-foundation-models/vietnamese-bi-encoder',
@@ -17,7 +17,7 @@ OPTIMAL_HYPERPARAMS = {
     'buffer_k': 2         # Số lượng cụm đệm cho K-Means để bù đắp sau khi lọc trùng
 }
 
-# Thư mục lưu trữ dự án
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MODELS_DIR = os.path.join(BASE_DIR, 'models')
 OUTPUTS_DIR = os.path.join(BASE_DIR, 'outputs')

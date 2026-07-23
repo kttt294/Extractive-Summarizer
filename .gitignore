@@ -15,12 +15,19 @@ htmlcov/
 .env.*
 *.env
 
-# Models & Heavy Binary Outputs (Bỏ qua weights mô hình nặng)
-models/
-backend/models/
-outputs/
+# Models & Heavy Binary Outputs (Bỏ qua weights mô hình nặng, chỉ giữ .gitkeep)
+models/*
+!models/.gitkeep
+outputs/*
+!outputs/.gitkeep
+backend/models/*
+!backend/models/.gitkeep
 logs/
 .ipynb_checkpoints/
+*.safetensors
+*.bin
+*.pt
+*.zip
 
 # Node.js / React / Frontend
 node_modules/
