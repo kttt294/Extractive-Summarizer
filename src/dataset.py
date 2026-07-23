@@ -22,66 +22,116 @@ for resource in ['punkt', 'punkt_tab']:
         nltk.download(resource, quiet=True)
 
 
-def load_evaluation_dataset(lang: str = 'en', sample_count: int = 200):
+def apply_quality_stratified_sampling(ds, sample_count: int, article_key: str = 'article', summary_key: str = 'highlights') -> List[dict]:
     """
-    Nạp dữ liệu thử nghiệm chuẩn từ Hugging Face Hub (CNN/DailyMail hoặc VietNews).
-    Chỉ chạy khi nạp dữ liệu từ Hugging Face thành công.
+    Chiến thuật Lấy mẫu Phân tầng & Lọc Chất lượng (Quality-Aware Stratified Sampling):
+    1. Lọc chất lượng: Article >= 8 câu, Summary >= 2 câu.
+    2. Lọc mật độ nén: Summary words / Article words <= 0.40 (Loại bỏ rác format).
+    3. Phân tầng độ dài (Stratified Length-based Sampling):
+       - Tầng Ngắn (8 - 15 câu): 33%
+       - Tầng Trung bình (15 - 30 câu): 34%
+       - Tầng Dài (> 30 câu): 33%
     """
-    print(f"Đang nạp bộ dữ liệu thử nghiệm {lang.upper()} (số lượng={sample_count})...")
+    tier_short, tier_medium, tier_long = [], [], []
+    target_per_tier = max(1, sample_count // 3)
+
+    for idx, sample in enumerate(ds):
+        art = sample.get(article_key) or sample.get('text', '')
+        summ = sample.get(summary_key) or sample.get('abstract') or sample.get('summary', '')
+
+        if not art or not summ:
+            continue
+
+        art_sents = [s.strip() for s in art.split('.') if len(s.strip()) > 5]
+        summ_sents = [s.strip() for s in summ.split('.') if len(s.strip()) > 5]
+
+        # 1. Lọc chất lượng văn bản
+        if len(art_sents) < 8 or len(summ_sents) < 2:
+            continue
+
+        # 2. Lọc mật độ nén thông tin
+        art_w = len(art.split())
+        summ_w = len(summ.split())
+        if art_w == 0 or (summ_w / art_w) > 0.40:
+            continue
+
+        item = {'id': idx, 'article': art, 'highlights': summ}
+        num_sents = len(art_sents)
+
+        # 3. Phân tầng theo độ dài bài báo
+        if num_sents <= 15 and len(tier_short) < target_per_tier:
+            tier_short.append(item)
+        elif 15 < num_sents <= 30 and len(tier_medium) < target_per_tier:
+            tier_medium.append(item)
+        elif num_sents > 30 and len(tier_long) < target_per_tier:
+            tier_long.append(item)
+
+        if len(tier_short) >= target_per_tier and len(tier_medium) >= target_per_tier and len(tier_long) >= target_per_tier:
+            break
+
+    combined = tier_short + tier_medium + tier_long
+    # Bổ sung nếu tập dữ liệu giới hạn
+    if len(combined) < sample_count:
+        existing_ids = {x['id'] for x in combined}
+        for idx, sample in enumerate(ds):
+            if len(combined) >= sample_count:
+                break
+            if idx in existing_ids:
+                continue
+            art = sample.get(article_key) or sample.get('text', '')
+            summ = sample.get(summary_key) or sample.get('abstract') or sample.get('summary', '')
+            if art and summ:
+                combined.append({'id': idx, 'article': art, 'highlights': summ})
+
+    return combined[:sample_count]
+
+
+def load_evaluation_dataset(lang: str = 'en', sample_count: int = 200, split: str = 'test'):
+    """
+    Nạp dữ liệu chuẩn từ Hugging Face Hub bằng Chiến thuật Lấy mẫu Phân tầng & Lọc Chất lượng.
+    Tham số split: 'train' (cho Fine-Tuning) hoặc 'test' (cho Đánh giá độc lập).
+    """
+    print(f"Đang nạp bộ dữ liệu {lang.upper()} [Split: {split}] bằng Chiến thuật Lấy mẫu Phân tầng (số lượng={sample_count})...")
     previous_verbosity = datasets.logging.get_verbosity()
     datasets.logging.set_verbosity_error()
     
     if lang == 'en':
         ds = None
-        for dataset_name in ["abisee/cnn_dailymail", "cnn_dailymail"]:
+        for dataset_name in ["cnn_dailymail", "abisee/cnn_dailymail"]:
             try:
-                ds = load_dataset(dataset_name, "3.0.0", split="test")
+                ds = load_dataset(dataset_name, "3.0.0", split=split)
                 if ds is not None:
                     break
             except Exception:
                 pass
 
         if ds is not None:
-            samples = ds.select(range(min(sample_count, len(ds))))
+            samples = apply_quality_stratified_sampling(ds, sample_count=sample_count, article_key='article', summary_key='highlights')
             datasets.logging.set_verbosity(previous_verbosity)
-            print(f"Đã nạp thành công {len(samples)} bài báo {lang.upper()} từ Hugging Face Hub.")
-            return [
-                {
-                    'id': idx,
-                    'article': sample['article'],
-                    'highlights': sample['highlights']
-                }
-                for idx, sample in enumerate(samples)
-            ]
+            print(f"Đã nạp thành công {len(samples)} bài báo Tinh hoa {lang.upper()} [{split}] qua lọc phân tầng.")
+            return samples
         else:
             datasets.logging.set_verbosity(previous_verbosity)
-            raise RuntimeError(f"LỖI: Không thể nạp tập dữ liệu Tiếng Anh (CNN/DailyMail) từ Hugging Face Hub. Vui lòng kiểm tra kết nối mạng.")
+            raise RuntimeError(f"LỖI: Không thể nạp tập dữ liệu Tiếng Anh (CNN/DailyMail) từ Hugging Face Hub.")
 
     else:
         ds = None
-        for dataset_name in ["bkai-foundation-models/vietnews", "vietnews"]:
+        for dataset_name in ["nam194/vietnews", "truongpdd/vietnews-dataset"]:
             try:
-                ds = load_dataset(dataset_name, split="test")
+                ds = load_dataset(dataset_name, split=split)
                 if ds is not None:
                     break
             except Exception:
                 pass
 
         if ds is not None:
-            samples = ds.select(range(min(sample_count, len(ds))))
+            samples = apply_quality_stratified_sampling(ds, sample_count=sample_count, article_key='article', summary_key='highlights')
             datasets.logging.set_verbosity(previous_verbosity)
-            print(f"Đã nạp thành công {len(samples)} bài báo {lang.upper()} từ Hugging Face Hub.")
-            return [
-                {
-                    'id': idx,
-                    'article': sample.get('article') or sample.get('text', ''),
-                    'highlights': sample.get('abstract') or sample.get('summary', '')
-                }
-                for idx, sample in enumerate(samples)
-            ]
+            print(f"Đã nạp thành công {len(samples)} bài báo Tinh hoa {lang.upper()} [{split}] qua lọc phân tầng.")
+            return samples
         else:
             datasets.logging.set_verbosity(previous_verbosity)
-            raise RuntimeError(f"LỖI: Không thể nạp tập dữ liệu Tiếng Việt (VietNews) từ Hugging Face Hub. Vui lòng kiểm tra kết nối mạng.")
+            raise RuntimeError(f"LỖI: Không thể nạp tập dữ liệu Tiếng Việt (VietNews) từ Hugging Face Hub.")
 
 
 def generate_oracle_extractive_pairs(articles_data: List[dict], max_pairs: int = 12000) -> List[InputExample]:

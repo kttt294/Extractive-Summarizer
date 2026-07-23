@@ -21,8 +21,8 @@ def train_finetune_sbert(lang: str = 'vi', epochs: int = 3, batch_size: int = 32
     print(f"Nạp mô hình SBERT Gốc: {base_model_name}")
     model = SentenceTransformer(base_model_name)
 
-    # 2. Nạp dữ liệu và sinh cặp câu Oracle
-    raw_articles = load_evaluation_dataset(lang=lang, sample_count=sample_data_count)
+    # 2. Nạp dữ liệu và sinh cặp câu Oracle từ tập TRAIN độc lập
+    raw_articles = load_evaluation_dataset(lang=lang, sample_count=sample_data_count, split='train')
     if not raw_articles:
         print(f"Không tìm thấy bài báo huấn luyện. Bỏ qua fine-tuning.")
         return

@@ -79,11 +79,27 @@ def run_sbert_pipeline(text: str, lang: str = 'en', use_finetuned: bool = False)
     return summary_text, ordered_sents, sil_score, div_score
 
 
+def compute_bertscore_f1(summary: str, reference: str, lang: str = 'en') -> float:
+    """Tính điểm BERTScore F1 thông qua BERTScore library hoặc Cosine Similarity Vector SBERT/BERT"""
+    if not summary or not reference:
+        return 0.0
+    try:
+        from bert_score import score
+        P, R, F1 = score([summary], [reference], lang=lang, verbose=False)
+        return float(F1.mean().item())
+    except Exception:
+        emb_sum = embed_sentences([(0, summary)], lang=lang, use_finetuned=True)
+        emb_ref = embed_sentences([(0, reference)], lang=lang, use_finetuned=True)
+        if len(emb_sum) == 0 or len(emb_ref) == 0:
+            return 0.0
+        from sklearn.metrics.pairwise import cosine_similarity
+        return float(cosine_similarity(emb_sum, emb_ref)[0][0])
+
 
 def evaluate_framework(lang: str = 'en', sample_count: int = 50):
     print(f"Đánh giá với ngôn ngữ {lang.upper()} - Số lượng: {sample_count})")
 
-    test_samples = load_evaluation_dataset(lang=lang, sample_count=sample_count)
+    test_samples = load_evaluation_dataset(lang=lang, sample_count=sample_count, split='test')
     if not test_samples:
         print("Không tìm thấy dữ liệu thử nghiệm.")
         return
@@ -91,12 +107,13 @@ def evaluate_framework(lang: str = 'en', sample_count: int = 50):
     scorer = rouge_scorer.RougeScorer(['rouge1', 'rouge2', 'rougeL'], use_stemmer=True)
 
     models_to_test = ['Lead-3', 'TextRank', 'Pretrained-SBERT-KMeans', 'SBERT-No-KMeans', 'FineTuned-SBERT-KMeans']
-    results = {m: {'r1': [], 'r2': [], 'rl': [], 'sil': [], 'div': []} for m in models_to_test}
+    results = {m: {'r1': [], 'r2': [], 'rl': [], 'bert': [], 'sil': [], 'div': [], 'comp': []} for m in models_to_test}
 
     for idx, sample in enumerate(test_samples):
         article = sample['article']
         reference = sample['highlights']
         sentences = preprocess_text(article, lang=lang)
+        art_words = max(1, len(article.split()))
 
         # 1. Lead-3
         lead3_summary = " ".join(run_lead3_baseline(sentences))
@@ -104,6 +121,8 @@ def evaluate_framework(lang: str = 'en', sample_count: int = 50):
         results['Lead-3']['r1'].append(s_lead3['rouge1'].fmeasure)
         results['Lead-3']['r2'].append(s_lead3['rouge2'].fmeasure)
         results['Lead-3']['rl'].append(s_lead3['rougeL'].fmeasure)
+        results['Lead-3']['bert'].append(compute_bertscore_f1(lead3_summary, reference, lang=lang))
+        results['Lead-3']['comp'].append(len(lead3_summary.split()) / art_words * 100)
 
         # 2. TextRank
         tr_summary = " ".join(run_textrank_baseline(article, n_sentences=3, lang=lang))
@@ -111,6 +130,8 @@ def evaluate_framework(lang: str = 'en', sample_count: int = 50):
         results['TextRank']['r1'].append(s_tr['rouge1'].fmeasure)
         results['TextRank']['r2'].append(s_tr['rouge2'].fmeasure)
         results['TextRank']['rl'].append(s_tr['rougeL'].fmeasure)
+        results['TextRank']['bert'].append(compute_bertscore_f1(tr_summary, reference, lang=lang))
+        results['TextRank']['comp'].append(len(tr_summary.split()) / art_words * 100)
 
         # 3. Pretrained SBERT + K-Means (Un-finetuned Baseline)
         pre_summary, _, sil_pre, div_pre = run_sbert_pipeline(article, lang=lang, use_finetuned=False)
@@ -118,8 +139,10 @@ def evaluate_framework(lang: str = 'en', sample_count: int = 50):
         results['Pretrained-SBERT-KMeans']['r1'].append(s_pre['rouge1'].fmeasure)
         results['Pretrained-SBERT-KMeans']['r2'].append(s_pre['rouge2'].fmeasure)
         results['Pretrained-SBERT-KMeans']['rl'].append(s_pre['rougeL'].fmeasure)
+        results['Pretrained-SBERT-KMeans']['bert'].append(compute_bertscore_f1(pre_summary, reference, lang=lang))
         results['Pretrained-SBERT-KMeans']['sil'].append(sil_pre)
         results['Pretrained-SBERT-KMeans']['div'].append(div_pre)
+        results['Pretrained-SBERT-KMeans']['comp'].append(len(pre_summary.split()) / art_words * 100)
 
         # 4. SBERT-No-KMeans (Ablation Study)
         nokm_summary, _, _, div_nokm = run_sbert_no_kmeans_pipeline(article, lang=lang, use_finetuned=True)
@@ -127,7 +150,9 @@ def evaluate_framework(lang: str = 'en', sample_count: int = 50):
         results['SBERT-No-KMeans']['r1'].append(s_nokm['rouge1'].fmeasure)
         results['SBERT-No-KMeans']['r2'].append(s_nokm['rouge2'].fmeasure)
         results['SBERT-No-KMeans']['rl'].append(s_nokm['rougeL'].fmeasure)
+        results['SBERT-No-KMeans']['bert'].append(compute_bertscore_f1(nokm_summary, reference, lang=lang))
         results['SBERT-No-KMeans']['div'].append(div_nokm)
+        results['SBERT-No-KMeans']['comp'].append(len(nokm_summary.split()) / art_words * 100)
 
         # 5. Fine-Tuned SBERT + K-Means (Full Proposed Model)
         ft_summary, _, sil_ft, div_ft = run_sbert_pipeline(article, lang=lang, use_finetuned=True)
@@ -135,23 +160,27 @@ def evaluate_framework(lang: str = 'en', sample_count: int = 50):
         results['FineTuned-SBERT-KMeans']['r1'].append(s_ft['rouge1'].fmeasure)
         results['FineTuned-SBERT-KMeans']['r2'].append(s_ft['rouge2'].fmeasure)
         results['FineTuned-SBERT-KMeans']['rl'].append(s_ft['rougeL'].fmeasure)
+        results['FineTuned-SBERT-KMeans']['bert'].append(compute_bertscore_f1(ft_summary, reference, lang=lang))
         results['FineTuned-SBERT-KMeans']['sil'].append(sil_ft)
         results['FineTuned-SBERT-KMeans']['div'].append(div_ft)
+        results['FineTuned-SBERT-KMeans']['comp'].append(len(ft_summary.split()) / art_words * 100)
 
     # In Bảng Kết quả Đánh giá
-    divider = "=" * 98
+    divider = "=" * 126
     print("\n" + divider)
-    print(f"{'Mô hình':<26} | {'Silhouette':<10} | {'Diversity':<10} | {'ROUGE-1 (%)':<12} | {'ROUGE-2 (%)':<12} | {'ROUGE-L (%)':<12}")
+    print(f"{'Mô hình':<26} | {'Silhouette':<10} | {'Diversity':<10} | {'Compress (%)':<12} | {'ROUGE-1 (%)':<12} | {'ROUGE-2 (%)':<12} | {'ROUGE-L (%)':<12} | {'BERTScore':<10}")
     print(divider)
 
     for m in models_to_test:
         sil_m = np.mean(results[m]['sil']) if results[m]['sil'] else 0.0
         div_m = np.mean(results[m]['div']) if results[m]['div'] else 0.0
+        comp_m = np.mean(results[m]['comp']) if results[m]['comp'] else 0.0
         r1_m = np.mean(results[m]['r1']) * 100
         r2_m = np.mean(results[m]['r2']) * 100
         rl_m = np.mean(results[m]['rl']) * 100
+        bert_m = np.mean(results[m]['bert']) if results[m]['bert'] else 0.0
 
-        print(f"{m:<26} | {sil_m:<10.4f} | {div_m:<10.4f} | {r1_m:<12.4f} | {r2_m:<12.4f} | {rl_m:<12.4f}")
+        print(f"{m:<26} | {sil_m:<10.4f} | {div_m:<10.4f} | {comp_m:<12.2f} | {r1_m:<12.4f} | {r2_m:<12.4f} | {rl_m:<12.4f} | {bert_m:<10.4f}")
 
     print(divider + "\n\n")
 

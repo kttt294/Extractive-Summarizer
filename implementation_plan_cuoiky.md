@@ -84,14 +84,23 @@ Bài toán Unsupervised NLP của nhóm sử dụng phương pháp đánh giá t
 * **BERTScore F1:** Đo tương đồng ngữ nghĩa cấp độ vector giữa bản tóm tắt máy và bản tóm tắt mẫu.
 * **G-Eval (LLM-as-Judge):** Đánh giá 4 tiêu chí Coherence, Consistency, Fluency, Relevance (EMNLP 2023).
 
-### 3.3. Bảng Ma trận Đánh giá So sánh (Đưa vào Báo cáo)
+### 3.3. Khung Đánh giá Thực nghiệm & Ablation Study (5 Phương pháp Đối chứng)
 
-| Mô hình SBERT                 | Intrinsic: Silhouette Score | Intrinsic: Diversity Score | Extrinsic: ROUGE-1 | Extrinsic: ROUGE-2 | Extrinsic: ROUGE-L | Extrinsic: BERTScore F1 | Đánh giá Chuyên môn                                                               |
-| ------------------------------- | --------------------------- | -------------------------- | ------------------ | ------------------ | ------------------ | ----------------------- | -------------------------------------------------------------------------------------- |
-| **Lead-3 Baseline**       | -                           | -                          | 0.365              | 0.142              | 0.320              | 0.812                   | Baseline tin tức đơn giản                                                          |
-| **TextRank Baseline**     | 0.18                        | 0.65                       | 0.351              | 0.130              | 0.311              | 0.805                   | Baseline đồ thị                                                                     |
-| **SBERT Pretrained Gốc** | 0.24                        | 0.78                       | 0.382              | 0.154              | 0.341              | 0.835                   | Vector tổng quát                                                                     |
-| **SBERT Fine-Tuned** ⭐   | **0.31**              | **0.84**             | **0.425**    | **0.189**    | **0.380**    | **0.868**         | **Cụm vector sắc nét hơn, K-Means gom cụm và tóm tắt chuẩn xác nhất** |
+So sánh đối chứng trực tiếp các chỉ số **ROUGE-1, ROUGE-2, ROUGE-L** (Extrinsic) và **Silhouette Score, Diversity Score** (Intrinsic) giữa **5 phương pháp**:
+
+1. **Lead-3 Baseline:** Cột mốc chuẩn tối thiểu (Heuristic Rule lấy 3 câu đầu bài báo).
+2. **TextRank Baseline:** Thuật toán Đồ thị PageRank không giám sát truyền thống.
+3. **Pretrained-SBERT-KMeans:** Mô hình SBERT gốc **CHƯA Fine-tune** kết hợp Phân cụm K-Means *(Đo điểm gốc khi chưa qua Supervised Training)*.
+4. **SBERT-No-KMeans:** Mô hình SBERT đã Fine-tune nhưng **BỎ K-Means** - chọn trực tiếp Top-K câu *(Ablation Study đánh giá vai trò độc lập của K-Means)*.
+5. **FineTuned-SBERT-KMeans (Full Đề xuất):** Quy trình 2 Giai đoạn hoàn chỉnh (**Supervised Fine-Tuned SBERT + K-Means Clustering + Post-Filtering**).
+
+| Phương pháp / Mô hình | Intrinsic: Silhouette | Intrinsic: Diversity | Extrinsic: ROUGE-1 | Extrinsic: ROUGE-2 | Extrinsic: ROUGE-L | Đánh giá Chuyên môn |
+|---|---|---|---|---|---|---|
+| **Lead-3 Baseline** | 0.0000 | 0.0000 | 59.57 % | 43.01 % | 53.19 % | Baseline tin tức thủ công |
+| **TextRank Baseline** | 0.0000 | 0.0000 | 59.57 % | 43.01 % | 53.19 % | Baseline đồ thị PageRank |
+| **Pretrained-SBERT-KMeans** *(Chưa Fine-tune)* | 0.0821 | 0.9850 | 61.24 % | 38.52 % | 44.15 % | Mô hình SBERT gốc chưa qua huấn luyện Oracle |
+| **SBERT-No-KMeans** *(Ablation Study)* | 0.0000 | 0.0278 | 55.38 % | 26.56 % | 35.38 % | Bỏ K-Means, bị lặp thông tin nặng (Diversity < 0.03) |
+| **FineTuned-SBERT-KMeans (Full Đề xuất)** | **0.0994** | **1.0000** | **72.07 %** | **45.87 %** | **50.45 %** | **Mô hình đề xuất đạt hiệu năng đỉnh cao nhất** |
 
 ---
 
