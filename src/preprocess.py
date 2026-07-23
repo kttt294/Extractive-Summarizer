@@ -19,8 +19,7 @@ except ImportError:
 
 def resolve_language(text: str, user_choice: str = 'auto') -> str:
     """
-    Tự động phát hiện ngôn ngữ ('en' hoặc 'vi') bằng langdetect
-    hoặc trả về lựa chọn thủ công của người dùng.
+    Tự động phát hiện ngôn ngữ ('en' hoặc 'vi') bằng langdetect hoặc trả về lựa chọn thủ công của người dùng.
     """
     if user_choice in ['en', 'vi']:
         return user_choice

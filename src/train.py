@@ -6,8 +6,6 @@ from torch.utils.data import DataLoader
 from sentence_transformers import SentenceTransformer, losses
 from src.config import MODEL_CONFIGS, MODELS_DIR
 from src.dataset import load_evaluation_dataset, generate_oracle_extractive_pairs
-
-# Tắt warning logs của Hugging Face
 warnings.filterwarnings("ignore")
 datasets.logging.set_verbosity_error()
 logging.getLogger("datasets").setLevel(logging.ERROR)
@@ -17,8 +15,7 @@ def train_finetune_sbert(lang: str = 'vi', epochs: int = 3, batch_size: int = 32
     """
     Fine-tune mô hình SBERT trên các cặp câu Oracle với CosineSimilarityLoss.
     """
-    print(f"--> BẮT ĐẦU FINE-TUNING SBERT ({lang.upper()})")
-
+    
     # 1. Load Pretrained SBERT Model
     base_model_name = MODEL_CONFIGS[lang]
     print(f"Nạp mô hình SBERT Gốc: {base_model_name}")
@@ -27,17 +24,14 @@ def train_finetune_sbert(lang: str = 'vi', epochs: int = 3, batch_size: int = 32
     # 2. Nạp dữ liệu và sinh cặp câu Oracle
     raw_articles = load_evaluation_dataset(lang=lang, sample_count=sample_data_count)
     if not raw_articles:
-        print(f"Không tìm thấy bài báo huấn luyện cho {lang}. Bỏ qua fine-tuning.")
+        print(f"Không tìm thấy bài báo huấn luyện. Bỏ qua fine-tuning.")
         return
-
     # Tự động điều chỉnh số lượng cặp câu Oracle theo sample_data_count
     max_oracle_pairs = sample_data_count * 4
     train_examples = generate_oracle_extractive_pairs(raw_articles, max_pairs=max_oracle_pairs)
-    
     if not train_examples:
-        print("Không tạo được cặp câu huấn luyện nào. Bỏ qua fine-tuning.")
+        print("Không tạo được cặp câu huấn luyện. Bỏ qua fine-tuning.")
         return
-
     train_dataloader = DataLoader(train_examples, shuffle=True, batch_size=batch_size)
 
     # 3. Định nghĩa Hàm Loss
@@ -48,7 +42,6 @@ def train_finetune_sbert(lang: str = 'vi', epochs: int = 3, batch_size: int = 32
     os.makedirs(save_path, exist_ok=True)
 
     # 5. Huấn luyện mô hình
-    print(f"Đang Fine-tune SBERT trong {epochs} epochs...")
     model.fit(
         train_objectives=[(train_dataloader, train_loss)],
         epochs=epochs,
@@ -57,7 +50,7 @@ def train_finetune_sbert(lang: str = 'vi', epochs: int = 3, batch_size: int = 32
         show_progress_bar=True
     )
 
-    print(f"Fine-Tuning hoàn tất! Mô hình đã được lưu tại: {save_path}\n")
+    print(f"Fine-Tuning hoàn tất. Mô hình đã được lưu tại: {save_path}\n")
     return save_path
 
 
