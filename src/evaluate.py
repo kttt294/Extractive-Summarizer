@@ -54,7 +54,7 @@ def run_sbert_no_kmeans_pipeline(text: str, lang: str = 'en', use_finetuned: boo
         return "", [], 0.0, 0.0
 
     embeddings = embed_sentences(sentences, lang=lang, use_finetuned=use_finetuned)
-    k = compute_k_adaptive(len(sentences))
+    _, target_k = compute_k_adaptive(len(sentences))
 
     # Tính Vector trung bình toàn bài báo (Document Centroid)
     doc_embedding = np.mean(embeddings, axis=0)
@@ -64,7 +64,7 @@ def run_sbert_no_kmeans_pipeline(text: str, lang: str = 'en', use_finetuned: boo
     sims = cosine_similarity(embeddings, doc_embedding.reshape(1, -1)).flatten()
 
     # Lấy Top-K câu có similarity cao nhất
-    top_k_indices = np.argsort(sims)[-k:][::-1]
+    top_k_indices = np.argsort(sims)[-target_k:][::-1]
     top_k_indices = sorted(top_k_indices)
     
     selected_sents = [sentences[idx][1] for idx in top_k_indices]
@@ -85,10 +85,10 @@ def run_sbert_pipeline(text: str, lang: str = 'en', use_finetuned: bool = False)
         return "", [], 0.0, 0.0
 
     embeddings = embed_sentences(sentences, lang=lang, use_finetuned=use_finetuned)
-    k = compute_k_adaptive(len(sentences))
+    kmeans_k, target_k = compute_k_adaptive(len(sentences))
 
-    indices, sents, embs, sil_score = kmeans_cluster(sentences, embeddings, k)
-    f_indices, f_sents, f_embs = filter_redundant(indices, sents, embs)
+    indices, sents, embs, sil_score = kmeans_cluster(sentences, embeddings, kmeans_k)
+    f_indices, f_sents, f_embs = filter_redundant(indices, sents, embs, target_sents=target_k)
     ordered_sents = reorder_by_original(f_indices, f_sents)
 
     div_score = diversity_score(f_embs)
