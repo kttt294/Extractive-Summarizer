@@ -11,7 +11,7 @@ export default function Navbar({ langChoice, setLangChoice, activePage, setActiv
           <img
             src="/logo.png"
             alt="Logo"
-            className="h-8 w-auto object-contain"
+            className="h-10 w-auto object-contain transition-transform hover:scale-105"
           />
           <span className="text-2xl font-extrabold text-brand-600 tracking-tight">
             Summarizer.
