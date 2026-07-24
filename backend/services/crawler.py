@@ -148,7 +148,7 @@ def crawl_articles_from_topic(topic: str, lang: str = 'vi') -> Dict[str, Any]:
             # 2. Nếu không đủ bài trong 24h, tự động mở rộng trong tuần (timelimit='w')
             if len(results) < 2:
                 is_today_news = False
-                notice_msg = "Không tìm thấy bài viết mới trong ngày hôm nay. Hệ thống đã tự động tổng hợp từ các bài viết mới nhất trong tuần qua."
+                notice_msg = None
                 results = list(ddgs.news(topic, region=ddg_region, timelimit='w', max_results=5))
 
                 if not results:
@@ -176,6 +176,7 @@ def crawl_articles_from_topic(topic: str, lang: str = 'vi') -> Dict[str, Any]:
                 if len(text) > 30:
                     combined_texts.append(text)
             is_today_news = False
+            notice_msg = None
         except Exception as err:
             raise ValueError(f"Không thể tìm thấy tin tức về chủ đề '{topic}': {err}")
 
@@ -198,15 +199,15 @@ def crawl_articles_from_topic(topic: str, lang: str = 'vi') -> Dict[str, Any]:
             min_date = min(parsed_dates).strftime("%d/%m/%Y")
             max_date = max(parsed_dates).strftime("%d/%m/%Y")
             if min_date == max_date:
-                date_range_str = f"Ngày {min_date}"
+                date_range_str = f"{min_date}"
             else:
                 date_range_str = f"{min_date} – {max_date}"
         else:
-            date_range_str = f"Hôm nay ({datetime.now(vn_tz).strftime('%d/%m/%Y')})"
+            date_range_str = "Các bài viết trước đó, do không tìm thấy bài viết mới hôm nay." if not is_today_news else f"Hôm nay ({datetime.now(vn_tz).strftime('%d/%m/%Y')})"
     else:
         from datetime import datetime, timezone, timedelta
         vn_tz = timezone(timedelta(hours=7))
-        date_range_str = f"Hôm nay ({datetime.now(vn_tz).strftime('%d/%m/%Y')})"
+        date_range_str = "Các bài viết trước đó, do không tìm thấy bài viết mới hôm nay." if not is_today_news else f"Hôm nay ({datetime.now(vn_tz).strftime('%d/%m/%Y')})"
 
     return {
         'topic': topic,

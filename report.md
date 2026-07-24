@@ -40,6 +40,7 @@ Việc lựa chọn 2 bộ dữ liệu **CNN/DailyMail** (Tiếng Anh) và **VND
 
 ### 2.4. Fine-Tuned SBERT (Mô hình Đề xuất)
 * **Bản chất Kỹ thuật:** Mô hình SBERT đã qua quy trình Supervised Fine-Tuning với hàm mất mát `CosineSimilarityLoss` trên tập các cặp câu Oracle trích xuất từ dữ liệu chuẩn [Liu & Lapata, 2019; Zhong et al., 2020].
+* **Public Model Hub:** Trọng số mô hình Tiếng Việt sau khi Fine-Tune đã được đóng gói và xuất bản chính thức trên Hugging Face Model Hub tại địa chỉ: [`kttt294/vietnamese-sbert-finetuned`](https://huggingface.co/kttt294/vietnamese-sbert-finetuned). Mô hình sẵn sàng phục vụ triển khai tự động trên môi trường Production (VPS Docker).
 
 ### 2.5. Cơ chế Trích xuất Vector Ngữ nghĩa & Chuẩn hóa Kích thước Cố định (`embed_sentences`)
 
@@ -304,10 +305,10 @@ Cần phân biệt rạch ròi 2 nhóm chỉ số để đảm bảo tính khác
 2. **Khẳng định Giá trị của Ablation Study (Nghiên cứu tháo gỡ thành phần):** 
    Tháo bỏ 1 trong 2 giai đoạn (K-Means hoặc Fine-tuning) đều làm chất lượng ROUGE và BERTScore sụt giảm nghiêm trọng, khẳng định 2 giai đoạn hỗ trợ chặt chẽ lẫn nhau.
 
-3. **Tính Cần thiết của Fine-Tuning đối với Tiếng Anh vs Tiếng Việt & Chiến lược Triển khai Production (Hybrid Dual-Model Strategy):**
+3. **Tính Cần thiết của Fine-Tuning đối với Tiếng Anh vs Tiếng Việt (Language-Specific Fine-Tuning Necessity):**
    - **Đối với Tiếng Anh (CNN/DailyMail):** Mô hình gốc `all-MiniLM-L6-v2` vốn đã được pre-train trên 1 Tỷ cặp câu tiếng Anh theo cơ chế Contrastive Learning. Không gian vector ngữ nghĩa tiếng Anh vốn đã đạt trạng thái tối ưu hóa rất cao. Do đó, việc Fine-tuning thêm trên Tiếng Anh mang lại hiệu quả cải thiện không đáng kể (thậm chí dính hiện tượng bão hòa *Ceiling Effect*), đồng thời bị hiện tượng *Lead Bias* mạnh của báo chí tiếng Anh áp đảo.
    - **Đối với Tiếng Việt (VietNews - Đối tượng nghiên cứu cốt lõi):** Mô hình gốc `vietnamese-bi-encoder` (dựa trên PhoBERT) chưa được qua nén ngữ nghĩa cặp câu góc rộng. Do đó, quy trình Supervised Fine-Tuning đối với Tiếng Việt là **BẮT BUỘC VÀ CỰC KỲ CẦN THIẾT**, giúp ROUGE-1 tăng vọt từ $44.69\%$ lên $52.87\%$ ($+8.18\%$) và Silhouette tăng từ $0.1039$ lên $0.1507$.
-   - **Quyết định Kiến trúc Triển khai Sản phẩm (Production Deployment Strategy):** Dựa trên dữ liệu thực nghiệm, ứng dụng áp dụng chiến lược **Hybrid Dual-Model**: Sử dụng mô hình Fine-Tuned cho Tiếng Việt để đạt chất lượng tóm tắt tối đa, và tự động dùng mô hình Pretrained gốc cho Tiếng Anh nhằm tiết kiệm 400MB RAM/VRAM và tăng tốc độ xử lý của Server Production trên VPS.
+   - **Kết luận:** Đề xuất Fine-Tuning đặc biệt hiệu quả và cần thiết cho các ngôn ngữ tài nguyên trung bình/thấp như Tiếng Việt, giúp thu hẹp khoảng cách chất lượng đại diện ngữ nghĩa với Tiếng Anh.
 
 #### 5.3.1. Phân tích Hiện tượng "Semantic Density Compression" (Sự Đánh đổi giữa Diversity Score và ROUGE-1/ROUGE-L)
 Một hiện tượng thực nghiệm quan trọng được phát hiện: *Tại sao trên tập tiếng Việt, mô hình Pretrained chưa fine-tune có Diversity Score rất cao ($0.7546$) nhưng ROUGE-1 lại thấp ($37.47\%$), trong khi FineTuned-SBERT-KMeans có Diversity thấp hơn ($0.1966$) nhưng ROUGE-1 lại tăng vọt lên đỉnh điểm ($52.87\%$) và ROUGE-L đạt $31.03\%$?*

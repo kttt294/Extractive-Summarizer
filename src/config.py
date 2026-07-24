@@ -4,7 +4,7 @@ import os
 MODEL_CONFIGS = {
     'en': 'sentence-transformers/all-MiniLM-L6-v2',
     'vi': 'bkai-foundation-models/vietnamese-bi-encoder',
-    'finetuned_vi': './models/finetuned_sbert_vi',
+    'finetuned_vi': 'kttt294/vietnamese-sbert-finetuned',
     'finetuned_en': './models/finetuned_sbert_en'
 }
 
