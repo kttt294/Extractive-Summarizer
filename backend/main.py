@@ -12,7 +12,14 @@ app = FastAPI(
 # Configure CORS Middleware to allow React Frontend requests
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://syssummarizers.tech",
+        "https://syssummarizers.tech",
+        "http://www.syssummarizers.tech",
+        "https://www.syssummarizers.tech",
+        "http://localhost",
+        "http://localhost:5173",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
