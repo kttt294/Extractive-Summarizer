@@ -10,13 +10,10 @@ export default function OriginalViewer({ title, originalText, highlightIndices, 
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-card p-5 space-y-4">
       {/* Header */}
-      <div className="flex items-start justify-between border-b border-gray-100 pb-3 gap-3">
+      <div className="flex items-center justify-between border-b border-gray-100 pb-3 gap-3">
         <h2 className="text-sm font-bold text-gray-800 flex-1 min-w-0 leading-snug">
           {title ? title : 'Văn Bản Gốc'}
         </h2>
-        <span className="text-[11px] text-gray-400 font-medium shrink-0 pt-0.5 whitespace-nowrap">
-          Di chuột để xem câu tương ứng
-        </span>
       </div>
 
       {/* Article Content */}

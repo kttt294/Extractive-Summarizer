@@ -68,9 +68,10 @@ def run_sbert_no_kmeans_pipeline(text: str, lang: str = 'en', use_finetuned: boo
     top_k_indices = sorted(top_k_indices)
     
     selected_sents = [sentences[idx][1] for idx in top_k_indices]
-    selected_embs = embeddings[top_k_indices]
     
-    div_score = diversity_score(selected_embs)
+    # Tính Diversity trên không gian vector cơ sở chuẩn (Neutral Reference Space)
+    base_embs = embed_sentences([(i, s) for i, s in enumerate(selected_sents)], lang=lang, use_finetuned=False)
+    div_score = diversity_score(base_embs)
     summary_text = " ".join(selected_sents)
     return summary_text, selected_sents, 0.0, div_score
 
@@ -91,7 +92,9 @@ def run_sbert_pipeline(text: str, lang: str = 'en', use_finetuned: bool = False)
     f_indices, f_sents, f_embs = filter_redundant(indices, sents, embs, target_sents=target_k)
     ordered_sents = reorder_by_original(f_indices, f_sents)
 
-    div_score = diversity_score(f_embs)
+    # Tính Diversity trên không gian vector cơ sở chuẩn (Neutral Reference Space) để đảm bảo tính công bằng
+    base_embs = embed_sentences([(i, s) for i, s in enumerate(f_sents)], lang=lang, use_finetuned=False)
+    div_score = diversity_score(base_embs)
     summary_text = " ".join(ordered_sents)
 
     return summary_text, ordered_sents, sil_score, div_score
@@ -130,9 +133,7 @@ def compute_bertscore_f1(summary: str, reference: str, lang: str = 'en') -> floa
 
 def evaluate_framework(lang: str = 'en', sample_count: int = 50):
     divider = "=" * 98
-    print(f"\n{divider}")
-    print(f"  CHẠY KHUNG ĐÁNH GIÁ THỰC NGHIỆM (NGÔN NGỮ {lang.upper()} - SỐ LƯỢNG = {sample_count})")
-    print(f"{divider}")
+    print(f"Đánh giá trên ngôn ngữ {lang.upper()} - Số lượng: {sample_count}")
 
     test_samples = load_evaluation_dataset(lang=lang, sample_count=sample_count, split='test')
     if not test_samples:
@@ -151,22 +152,36 @@ def evaluate_framework(lang: str = 'en', sample_count: int = 50):
         art_words = max(1, len(article.split()))
 
         # 1. Lead-3
-        lead3_summary = " ".join(run_lead3_baseline(sentences))
+        lead3_sents = run_lead3_baseline(sentences)
+        lead3_summary = " ".join(lead3_sents)
         s_lead3 = scorer.score(reference, lead3_summary)
         results['Lead-3']['r1'].append(s_lead3['rouge1'].fmeasure)
         results['Lead-3']['r2'].append(s_lead3['rouge2'].fmeasure)
         results['Lead-3']['rl'].append(s_lead3['rougeL'].fmeasure)
         results['Lead-3']['bert'].append(compute_bertscore_f1(lead3_summary, reference, lang=lang))
-        results['Lead-3']['comp'].append(len(lead3_summary.split()) / art_words * 100)
+        results['Lead-3']['comp'].append((1.0 - len(lead3_summary.split()) / art_words) * 100)
+        # Tính Diversity công bằng cho Lead-3 bằng cách embed các câu đã chọn qua SBERT (Neutral Reference Space)
+        if len(lead3_sents) >= 2:
+            lead3_embs = embed_sentences([(i, s) for i, s in enumerate(lead3_sents)], lang=lang, use_finetuned=False)
+            results['Lead-3']['div'].append(diversity_score(lead3_embs))
+        else:
+            results['Lead-3']['div'].append(0.0)
 
         # 2. TextRank
-        tr_summary = " ".join(run_textrank_baseline(article, n_sentences=3, lang=lang))
+        tr_sents = run_textrank_baseline(article, n_sentences=3, lang=lang)
+        tr_summary = " ".join(tr_sents)
         s_tr = scorer.score(reference, tr_summary)
         results['TextRank']['r1'].append(s_tr['rouge1'].fmeasure)
         results['TextRank']['r2'].append(s_tr['rouge2'].fmeasure)
         results['TextRank']['rl'].append(s_tr['rougeL'].fmeasure)
         results['TextRank']['bert'].append(compute_bertscore_f1(tr_summary, reference, lang=lang))
-        results['TextRank']['comp'].append(len(tr_summary.split()) / art_words * 100)
+        results['TextRank']['comp'].append((1.0 - len(tr_summary.split()) / art_words) * 100)
+        # Tính Diversity công bằng cho TextRank bằng cách embed các câu đã chọn qua SBERT (Neutral Reference Space)
+        if len(tr_sents) >= 2:
+            tr_embs = embed_sentences([(i, s) for i, s in enumerate(tr_sents)], lang=lang, use_finetuned=False)
+            results['TextRank']['div'].append(diversity_score(tr_embs))
+        else:
+            results['TextRank']['div'].append(0.0)
 
         # 3. Pretrained SBERT + K-Means (Un-finetuned Baseline)
         pre_summary, _, sil_pre, div_pre = run_sbert_pipeline(article, lang=lang, use_finetuned=False)
@@ -177,7 +192,7 @@ def evaluate_framework(lang: str = 'en', sample_count: int = 50):
         results['Pretrained-SBERT-KMeans']['bert'].append(compute_bertscore_f1(pre_summary, reference, lang=lang))
         results['Pretrained-SBERT-KMeans']['sil'].append(sil_pre)
         results['Pretrained-SBERT-KMeans']['div'].append(div_pre)
-        results['Pretrained-SBERT-KMeans']['comp'].append(len(pre_summary.split()) / art_words * 100)
+        results['Pretrained-SBERT-KMeans']['comp'].append((1.0 - len(pre_summary.split()) / art_words) * 100)
 
         # 4. SBERT-No-KMeans (Ablation Study)
         nokm_summary, _, _, div_nokm = run_sbert_no_kmeans_pipeline(article, lang=lang, use_finetuned=True)
@@ -187,7 +202,7 @@ def evaluate_framework(lang: str = 'en', sample_count: int = 50):
         results['SBERT-No-KMeans']['rl'].append(s_nokm['rougeL'].fmeasure)
         results['SBERT-No-KMeans']['bert'].append(compute_bertscore_f1(nokm_summary, reference, lang=lang))
         results['SBERT-No-KMeans']['div'].append(div_nokm)
-        results['SBERT-No-KMeans']['comp'].append(len(nokm_summary.split()) / art_words * 100)
+        results['SBERT-No-KMeans']['comp'].append((1.0 - len(nokm_summary.split()) / art_words) * 100)
 
         # 5. Fine-Tuned SBERT + K-Means (Full Proposed Model)
         ft_summary, _, sil_ft, div_ft = run_sbert_pipeline(article, lang=lang, use_finetuned=True)
@@ -198,7 +213,10 @@ def evaluate_framework(lang: str = 'en', sample_count: int = 50):
         results['FineTuned-SBERT-KMeans']['bert'].append(compute_bertscore_f1(ft_summary, reference, lang=lang))
         results['FineTuned-SBERT-KMeans']['sil'].append(sil_ft)
         results['FineTuned-SBERT-KMeans']['div'].append(div_ft)
-        results['FineTuned-SBERT-KMeans']['comp'].append(len(ft_summary.split()) / art_words * 100)
+        results['FineTuned-SBERT-KMeans']['comp'].append((1.0 - len(ft_summary.split()) / art_words) * 100)
+
+    # Các mô hình không sử dụng K-Means → Silhouette không áp dụng (N/A)
+    non_clustering_models = {'Lead-3', 'TextRank', 'SBERT-No-KMeans'}
 
     # In Bảng Kết quả Đánh giá
     divider = "=" * 126
@@ -207,7 +225,6 @@ def evaluate_framework(lang: str = 'en', sample_count: int = 50):
     print(divider)
 
     for m in models_to_test:
-        sil_m = np.mean(results[m]['sil']) if results[m]['sil'] else 0.0
         div_m = np.mean(results[m]['div']) if results[m]['div'] else 0.0
         comp_m = np.mean(results[m]['comp']) if results[m]['comp'] else 0.0
         r1_m = np.mean(results[m]['r1']) * 100
@@ -215,7 +232,13 @@ def evaluate_framework(lang: str = 'en', sample_count: int = 50):
         rl_m = np.mean(results[m]['rl']) * 100
         bert_m = np.mean(results[m]['bert']) if results[m]['bert'] else 0.0
 
-        print(f"{m:<26} | {sil_m:<10.4f} | {div_m:<10.4f} | {comp_m:<12.2f} | {r1_m:<12.4f} | {r2_m:<12.4f} | {rl_m:<12.4f} | {bert_m:<10.4f}")
+        if m in non_clustering_models:
+            sil_str = "N/A       "
+        else:
+            sil_m = np.mean(results[m]['sil']) if results[m]['sil'] else 0.0
+            sil_str = f"{sil_m:<10.4f}"
+
+        print(f"{m:<26} | {sil_str} | {div_m:<10.4f} | {comp_m:<12.2f} | {r1_m:<12.4f} | {r2_m:<12.4f} | {rl_m:<12.4f} | {bert_m:<10.4f}")
 
     print(divider + "\n\n")
 

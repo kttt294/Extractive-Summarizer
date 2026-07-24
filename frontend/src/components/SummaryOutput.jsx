@@ -23,10 +23,10 @@ export default function SummaryOutput({ sentences, highlightIndices, activeHover
 
         <button
           onClick={handleCopy}
-          className="flex items-center space-x-1.5 text-xs text-gray-400 hover:text-brand-500 bg-gray-50 hover:bg-brand-50 px-3 py-1.5 rounded-full border border-gray-200 hover:border-brand-200 transition-all"
+          title={copied ? "Đã sao chép!" : "Sao chép"}
+          className="flex items-center justify-center p-2 text-gray-400 hover:text-brand-500 bg-gray-50 hover:bg-brand-50 rounded-full border border-gray-200 hover:border-brand-200 transition-all cursor-pointer"
         >
-          {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-          <span>{copied ? 'Đã sao chép!' : 'Sao chép'}</span>
+          {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
         </button>
       </div>
 
