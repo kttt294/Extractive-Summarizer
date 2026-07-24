@@ -9,10 +9,9 @@ export default function Navbar({ langChoice, setLangChoice, activePage, setActiv
         {/* Left: Logo & Title */}
         <div className="flex items-center -ml-6 cursor-pointer space-x-2.5" onClick={() => setActivePage('summarize')}>
           <img
-            src="/logo.svg"
+            src="/logo.png"
             alt="Logo"
             className="h-8 w-auto object-contain"
-            onError={(e) => { e.currentTarget.style.display = 'none'; }}
           />
           <span className="text-2xl font-extrabold text-brand-600 tracking-tight">
             Summarizer.
