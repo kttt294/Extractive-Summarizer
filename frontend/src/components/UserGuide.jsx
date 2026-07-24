@@ -78,17 +78,6 @@ export default function UserGuide({ onStartSummarizing }) {
           );
         })}
       </div>
-
-      {/* CTA Bottom Banner */}
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-card p-8 text-center space-y-4">
-        <h3 className="text-lg font-bold text-gray-900">Sẵn sàng trải nghiệm tóm tắt văn bản?</h3>
-        <button
-          onClick={onStartSummarizing}
-          className="py-3 px-6 bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white font-semibold rounded-xl text-sm shadow-sm transition-all cursor-pointer"
-        >
-          Trải nghiệm ngay
-        </button>
-      </div>
     </div>
   );
 }

@@ -6,32 +6,44 @@ from sklearn.metrics import silhouette_score
 from src.config import OPTIMAL_HYPERPARAMS
 
 
-def compute_k_adaptive(n_sentences: int, summary_length: str = 'medium', enable_buffer: bool = True) -> int:
+def compute_k_adaptive(n_sentences: int, summary_length: str = 'medium', enable_buffer: bool = True) -> Tuple[int, int]:
     """
-    Tính toán số cụm K thích ứng có kèm theo hệ số đệm lọc trùng (Buffer K).
+    Tính toán số cụm K thích ứng linh hoạt hoàn toàn theo tỷ lệ nén Alpha và hệ số độ dài scale.
+    Công thức toán học: K_target = round(N * alpha * scale)
     """
-    if n_sentences < 3:
-        return n_sentences
+    if n_sentences <= 1:
+        return 1, 1
 
-    alpha = OPTIMAL_HYPERPARAMS['alpha']
-    scales = {'brief': 0.7, 'medium': 1.0, 'detailed': 1.4}
+    alpha = OPTIMAL_HYPERPARAMS['alpha']  # 0.25 (Tỷ lệ nén tối ưu từ Grid Search)
+    scales = {'brief': 0.6, 'medium': 1.0, 'detailed': 1.6}
     scale = scales.get(summary_length, 1.0)
 
-    target_k = int(round(n_sentences * alpha * scale))
-    target_k = max(3, min(6, target_k))
+    # 1. Tính toán K tự động theo tỷ lệ toán học
+    raw_k = int(round(n_sentences * alpha * scale))
 
-    if enable_buffer and n_sentences > 5:
-        kmeans_k = target_k + OPTIMAL_HYPERPARAMS['buffer_k']
+    # 2. Đảm bảo phân tầng độ dài logic cho bài ngắn (Monotonic Progression: brief < medium < detailed)
+    if summary_length == 'brief':
+        target_k = max(1, raw_k)
+    elif summary_length == 'detailed':
+        target_k = max(int(round(n_sentences * 0.4)), raw_k, 3)
+    else:  # 'medium'
+        target_k = max(2, raw_k)
+
+    target_k = min(n_sentences, target_k)
+
+    # 3. K-Means Buffer K để chống mất mát thông tin sau khi lọc trùng
+    if enable_buffer and n_sentences > target_k + 1:
+        kmeans_k = min(n_sentences, target_k + OPTIMAL_HYPERPARAMS['buffer_k'])
     else:
         kmeans_k = target_k
 
-    return min(n_sentences, kmeans_k)
+    return kmeans_k, target_k
 
 
 def kmeans_cluster(sentences: List[Tuple[int, str]], embeddings: np.ndarray, k: int) -> Tuple[List[int], List[str], List[np.ndarray], float]:
     """
-    Thực hiện phân cụm K-Means và chọn câu nằm gần tâm cụm nhất có kết hợp Position-Aware Weighting.
-    Tính toán Chỉ số Nội tại (Intrinsic Metric): Silhouette Score.
+    Thực hiện phân cụm K-Means và chọn câu nằm gần tâm cụm nhất có kết hợp Position-Aware Weighting
+    Tính toán Chỉ số Nội tại (Intrinsic Metric): Silhouette Score
     """
     k = min(k, len(sentences))
     if k <= 0 or len(sentences) == 0:
@@ -79,7 +91,7 @@ def kmeans_cluster(sentences: List[Tuple[int, str]], embeddings: np.ndarray, k: 
 def filter_redundant(indices: List[int], sents: List[str], embs: List[np.ndarray], threshold: float = None, target_sents: int = 3) -> Tuple[List[int], List[str], List[np.ndarray]]:
     """
     Bước lọc sau (Post-filtering) loại bỏ các câu trùng lặp ngữ nghĩa dựa trên ngưỡng Cosine Similarity.
-    Giữ lại đúng target_sents câu tinh hoa (mặc định 3 câu) để khớp tỷ lệ nén chuẩn 20-25%.
+    Giữ lại đúng target_sents câu tinh hoa theo đúng thiết lập độ dài người dùng yêu cầu.
     """
     if threshold is None:
         threshold = OPTIMAL_HYPERPARAMS['theta']
@@ -94,6 +106,8 @@ def filter_redundant(indices: List[int], sents: List[str], embs: List[np.ndarray
                 break
         if not is_redundant:
             keep_indices.append(i)
+            if len(keep_indices) >= target_sents:
+                break
 
     return (
         [indices[i] for i in keep_indices],

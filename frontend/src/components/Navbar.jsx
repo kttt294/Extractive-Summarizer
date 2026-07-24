@@ -1,5 +1,5 @@
 import React from 'react';
-import { Globe, FileText, HelpCircle } from 'lucide-react';
+import { FileText, HelpCircle } from 'lucide-react';
 
 export default function Navbar({ langChoice, setLangChoice, activePage, setActivePage }) {
   return (
@@ -41,16 +41,16 @@ export default function Navbar({ langChoice, setLangChoice, activePage, setActiv
         </nav>
 
         {/* Right: Language Selector */}
-        <div className="flex items-center space-x-2 bg-gray-50 border border-gray-200 rounded-full px-3 py-1.5 text-sm text-gray-600">
-          <Globe className="w-4 h-4 text-gray-400" />
+        <div className="flex items-center space-x-2 bg-gray-50 border border-gray-200 rounded-full px-3.5 py-1.5 text-sm text-gray-600">
+          <span className="font-semibold text-gray-500 text-sm">Ngôn ngữ:</span>
           <select
             value={langChoice}
             onChange={(e) => setLangChoice(e.target.value)}
-            className="bg-transparent outline-none cursor-pointer text-sm font-medium text-gray-700"
+            className="bg-transparent outline-none cursor-pointer text-sm font-semibold text-gray-800 font-['Inter',sans-serif]"
           >
-            <option value="auto">Tự động</option>
-            <option value="vi">Tiếng Việt</option>
-            <option value="en">English</option>
+            <option value="auto" className="bg-white text-gray-800 font-medium py-1 font-['Inter',sans-serif]">Tự động</option>
+            <option value="vi" className="bg-white text-gray-800 font-medium py-1 font-['Inter',sans-serif]">Tiếng Việt</option>
+            <option value="en" className="bg-white text-gray-800 font-medium py-1 font-['Inter',sans-serif]">English</option>
           </select>
         </div>
 

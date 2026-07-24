@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Copy, Check, ListFilter } from 'lucide-react';
+import { Copy, Check } from 'lucide-react';
 
 export default function SummaryOutput({ sentences, highlightIndices, activeHoverIndex, setActiveHoverIndex }) {
   const [copied, setCopied] = useState(false);
@@ -18,9 +18,6 @@ export default function SummaryOutput({ sentences, highlightIndices, activeHover
       {/* Card Header */}
       <div className="flex items-center justify-between border-b border-gray-100 pb-3">
         <div className="flex items-center space-x-2">
-          <div className="w-7 h-7 bg-brand-50 rounded-lg flex items-center justify-center">
-            <ListFilter className="w-4 h-4 text-brand-500" />
-          </div>
           <h2 className="text-sm font-bold text-gray-800">Bản Tóm Tắt Trích Xuất</h2>
         </div>
 

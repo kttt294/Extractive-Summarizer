@@ -1,13 +1,16 @@
 import axios from 'axios';
 
-// API Base URL - defaults to relative URL when deployed behind Nginx or http://localhost:8000 for local dev
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+// API Base URL - relative URL in production (Nginx proxy) or http://localhost:8000 for dev
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL !== undefined
+  ? import.meta.env.VITE_API_BASE_URL
+  : (import.meta.env.DEV ? 'http://localhost:8000' : '');
 
 const client = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 60000, // 60 seconds timeout to allow model loading
 });
 
 export const summarizeTextApi = async (text, lang = 'auto', length = 'medium') => {

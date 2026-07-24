@@ -1,5 +1,4 @@
 import React from 'react';
-import { Eye } from 'lucide-react';
 
 export default function OriginalViewer({ title, originalText, highlightIndices, activeHoverIndex, setActiveHoverIndex }) {
   if (!originalText) return null;
@@ -11,16 +10,13 @@ export default function OriginalViewer({ title, originalText, highlightIndices, 
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-card p-5 space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-        <div className="flex items-center space-x-2">
-          <div className="w-7 h-7 bg-emerald-50 rounded-lg flex items-center justify-center">
-            <Eye className="w-4 h-4 text-emerald-500" />
-          </div>
-          <h2 className="text-sm font-bold text-gray-800">
-            {title ? title : 'Văn Bản Gốc'}
-          </h2>
-        </div>
-        <span className="text-[11px] text-gray-400 font-medium">Di chuột để xem câu tương ứng</span>
+      <div className="flex items-start justify-between border-b border-gray-100 pb-3 gap-3">
+        <h2 className="text-sm font-bold text-gray-800 flex-1 min-w-0 leading-snug">
+          {title ? title : 'Văn Bản Gốc'}
+        </h2>
+        <span className="text-[11px] text-gray-400 font-medium shrink-0 pt-0.5 whitespace-nowrap">
+          Di chuột để xem câu tương ứng
+        </span>
       </div>
 
       {/* Article Content */}

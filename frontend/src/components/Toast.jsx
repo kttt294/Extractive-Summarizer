@@ -15,17 +15,17 @@ export default function Toast({ toast, onClose }) {
 
   const configs = {
     error: {
-      bg: 'bg-white border-red-200 text-red-700',
+      bg: 'bg-white border-white text-red-700',
       icon: AlertCircle,
       iconColor: 'text-red-500',
     },
     success: {
-      bg: 'bg-white border-emerald-200 text-emerald-700',
+      bg: 'bg-white border-white text-emerald-700',
       icon: CheckCircle2,
       iconColor: 'text-emerald-500',
     },
     info: {
-      bg: 'bg-white border-brand-200 text-brand-700',
+      bg: 'bg-white border-white text-brand-700',
       icon: Info,
       iconColor: 'text-brand-500',
     }
@@ -36,7 +36,7 @@ export default function Toast({ toast, onClose }) {
 
   return (
     <div className="fixed bottom-6 right-6 z-50 animate-bounce-in max-w-sm w-full">
-      <div className={`p-4 rounded-2xl border ${config.bg} bg-white flex items-center justify-between space-x-3 transition-all duration-300`}>
+      <div className={`p-4 rounded-2xl border ${config.bg} flex items-center justify-between space-x-3 transition-all duration-300`}>
         <div className="flex items-center space-x-3">
           <Icon className={`w-5 h-5 ${config.iconColor} shrink-0`} />
           <p className="text-sm font-medium leading-snug">{message}</p>

@@ -30,13 +30,13 @@ def process_summarization(text: str, user_lang: str = 'auto', length: str = 'med
     embeddings = embed_sentences(sentences, lang=lang, use_finetuned=use_finetuned)
 
     # 4. Compute Adaptive K
-    k = compute_k_adaptive(len(sentences), summary_length=length, enable_buffer=True)
+    kmeans_k, target_k = compute_k_adaptive(len(sentences), summary_length=length, enable_buffer=True)
 
     # 5. K-Means Clustering & Intrinsic Metric (Silhouette Score)
-    indices, sents, embs, sil_score = kmeans_cluster(sentences, embeddings, k)
+    indices, sents, embs, sil_score = kmeans_cluster(sentences, embeddings, kmeans_k)
 
-    # 6. Post-filtering (Semantic Deduplication)
-    f_indices, f_sents, f_embs = filter_redundant(indices, sents, embs)
+    # 6. Post-filtering (Semantic Deduplication) with dynamic target_sents
+    f_indices, f_sents, f_embs = filter_redundant(indices, sents, embs, target_sents=target_k)
 
     # 7. Original Sequence Reordering
     ordered_sents = reorder_by_original(f_indices, f_sents)

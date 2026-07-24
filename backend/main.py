@@ -22,10 +22,20 @@ app.add_middleware(
 app.include_router(health.router)
 app.include_router(summarize.router)
 
+@app.on_event("startup")
+def startup_event():
+    print("Pre-warming SBERT model into RAM...")
+    try:
+        from src.embedding import get_sbert_model
+        get_sbert_model('vi', use_finetuned=True)
+        print("SBERT model pre-warmed into RAM successfully!")
+    except Exception as e:
+        print(f"Pre-warming model note: {e}")
+
 @app.get("/")
 def root():
     return {
-        "message": "Welcome to Extractive Summarizer API!",
+        "message": "Extractive Summarizer API",
         "docs_url": "/docs",
         "health_check": "/api/v1/health"
     }

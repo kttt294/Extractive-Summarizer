@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Navbar from './components/Navbar';
 import InputTabs from './components/InputTabs';
 import LengthSelector from './components/LengthSelector';
+import TopicBanner from './components/TopicBanner';
 import StatsHeader from './components/StatsHeader';
 import SummaryOutput from './components/SummaryOutput';
 import OriginalViewer from './components/OriginalViewer';
@@ -51,7 +52,6 @@ export default function App() {
       }
 
       setResult(data);
-      setToast({ message: 'Tóm tắt văn bản thành công!', type: 'success' });
     } catch (err) {
       console.error(err);
       const errorMsg = err.response?.data?.detail || err.message || 'Đã có lỗi xảy ra trong quá trình tóm tắt.';
@@ -118,12 +118,8 @@ export default function App() {
             <div className="lg:col-span-7">
               {result ? (
                 <div className="h-[540px] overflow-y-auto space-y-5 pr-1.5 scrollbar-thin scrollbar-thumb-slate-300">
-                  <StatsHeader
-                    stats={result.stats}
-                    notice={result.notice}
-                    dateRange={result.date_range}
-                    isTodayNews={result.is_today_news}
-                  />
+                  {/* Topic Timeline & Notice Banner at VERY TOP */}
+                  <TopicBanner dateRange={result.date_range} notice={result.notice} />
 
                   <SummaryOutput
                     sentences={result.summary_sentences}
@@ -139,6 +135,9 @@ export default function App() {
                     activeHoverIndex={activeHoverIndex}
                     setActiveHoverIndex={setActiveHoverIndex}
                   />
+
+                  {/* 4 Stat Cards at VERY BOTTOM */}
+                  <StatsHeader stats={result.stats} />
                 </div>
               ) : (
                 <div className="bg-white rounded-2xl border border-gray-200 shadow-card p-12 text-center space-y-2 h-[540px] flex flex-col items-center justify-center">

@@ -31,9 +31,34 @@ def resolve_language(text: str, user_choice: str = 'auto') -> str:
         return 'vi'  # Mặc định tiếng Việt nếu có lỗi
 
 
+CAPTION_NOISE_KEYWORDS = [
+    'ảnh minh họa', 'ảnh:', 'nguồn:', 'ttxvn', 'theo ttxvn', 'ảnh/clip:',
+    'đồ họa:', 'video:', 'hình ảnh:', 'báo tin tức', 'vnexpress', 'dân trí',
+    'tuổi trẻ', 'thanh niên', 'chụp màn hình', 'bản quyền', 'copyright',
+    'tin, ảnh:', 'bài, ảnh:', 'phóng viên', 'ctv', 'btv'
+]
+
+
+def is_noise_or_caption(sent: str) -> bool:
+    s_lower = sent.lower().strip()
+
+    # 1. Matches common caption patterns or author credits
+    for kw in CAPTION_NOISE_KEYWORDS:
+        if s_lower.startswith(kw) or f"({kw})" in s_lower or f"[{kw}]" in s_lower:
+            return True
+        if kw in ['ảnh minh họa', 'ttxvn', 'chụp màn hình', 'bản quyền'] and kw in s_lower and len(s_lower.split()) < 14:
+            return True
+
+    # 2. Pattern like "Việt Hà (TTXVN)" or "Nguyễn Lành/TTXVN" at short length
+    if ('/ttxvn' in s_lower or '(ttxvn)' in s_lower or 'nhiếp ảnh' in s_lower or 'ảnh:' in s_lower) and len(s_lower.split()) < 14:
+        return True
+
+    return False
+
+
 def preprocess_text(text: str, lang: str = 'vi'):
     """
-    Tách câu và lọc câu dựa trên độ dài từ.
+    Tách câu và lọc câu dựa trên độ dài từ và lọc chú thích ảnh / tác giả rác.
     Tự động tách các đoạn văn bản (paragraphs / linebreaks) để tránh dính nhiều đoạn thành 1 câu.
     """
     lines = [line.strip() for line in text.split('\n') if line.strip()]
@@ -60,8 +85,10 @@ def preprocess_text(text: str, lang: str = 'vi'):
         cleaned = sent.strip()
         word_count = len(cleaned.split())
         
-        # Loại bỏ URL, các câu quá ngắn hoặc quá dài
-        if min_w <= word_count <= max_w and not cleaned.startswith(('http://', 'https://')):
+        # Loại bỏ URL, chú thích ảnh / nguồn rác, các câu quá ngắn hoặc quá dài
+        if (min_w <= word_count <= max_w 
+                and not cleaned.startswith(('http://', 'https://'))
+                and not is_noise_or_caption(cleaned)):
             filtered_sentences.append((len(filtered_sentences), cleaned))
 
     return filtered_sentences
