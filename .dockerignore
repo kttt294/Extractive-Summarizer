@@ -1,0 +1,32 @@
+# Ignore Git metadata
+.git
+.gitignore
+
+# Ignore Python cache & virtual environment
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
+.venv/
+env/
+
+# Ignore Jupyter Notebooks & Presentations
+*.ipynb
+.ipynb_checkpoints/
+*.pptx
+*.ppt
+*.pdf
+
+# Ignore Documentation & Implementation Plans
+report.md
+implementation_plan*.md
+
+# Ignore heavy local models & output directories (models will be pulled dynamically from HuggingFace)
+models/
+outputs/
+
+# Ignore Frontend build artifacts & dependencies
+frontend/node_modules/
+frontend/dist/
+node_modules/
