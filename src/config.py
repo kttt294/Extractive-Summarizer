@@ -2,7 +2,7 @@ import os
 
 # Đường dẫn bộ các hình Pretrained và Fine-Tuned trên Hugging Face & Local
 MODEL_CONFIGS = {
-    'en': 'sentence-transformers/all-MiniLM-L6-v2',
+    'en': 'sentence-transformers/all-mpnet-base-v2',
     'vi': 'bkai-foundation-models/vietnamese-bi-encoder',
     'finetuned_vi': 'kttt294/vietnamese-sbert-finetuned',
     'finetuned_en': './models/finetuned_sbert_en'
