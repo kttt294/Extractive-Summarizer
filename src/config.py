@@ -5,7 +5,7 @@ MODEL_CONFIGS = {
     'en': 'sentence-transformers/all-mpnet-base-v2',
     'vi': 'bkai-foundation-models/vietnamese-bi-encoder',
     'finetuned_vi': 'kttt294/vietnamese-sbert-finetuned',
-    'finetuned_en': './models/finetuned_sbert_en'
+    'finetuned_en': 'kttt294/english-sbert-finetuned'
 }
 
 # Các siêu tham số tối ưu (Thu được từ quá trình Grid Search Evaluation)
