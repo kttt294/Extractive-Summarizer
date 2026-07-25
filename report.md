@@ -95,7 +95,7 @@ Việc lựa chọn 2 bộ dữ liệu **CNN/DailyMail** (Tiếng Anh) và **VND
 ```
 [ GIAI ĐOẠN 1: REPRESENTATION LEARNING ]        [ GIAI ĐOẠN 2: DIVERSITY-AWARE SELECTION ]
  ROUGE Oracle Matching ──► SBERT Fine-Tuning  ──► K-Means Clustering ──► Post-Filtering (θ=0.85)
- (Học Vector Biểu diễn Ngữ nghĩa Báo chí)        (Phân cụm Chủ đề con)    (Khử trùng lặp dư thừa)
+ (Học Vector Biểu diễn Ngữ nghĩa Văn bản)        (Phân cụm Chủ đề con)    (Khử trùng lặp dư thừa)
 ```
 
 ### 3.1. Giai đoạn 1: Representation Learning via ROUGE-1 Oracle Matching (`generate_oracle_extractive_pairs`)
