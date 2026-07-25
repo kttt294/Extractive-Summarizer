@@ -16,13 +16,20 @@ def get_sbert_model(lang: str = 'vi', use_finetuned: bool = False) -> SentenceTr
 
     if use_finetuned:
         model_path = MODEL_CONFIGS['finetuned_vi'] if lang == 'vi' else MODEL_CONFIGS['finetuned_en']
-        if not os.path.exists(model_path):
+        # Kiểm tra nếu model_path là đường dẫn cục bộ bắt buộc (chứa ./ hoặc .\\ hoặc absolute path)
+        if (model_path.startswith('./') or model_path.startswith('.\\') or os.path.isabs(model_path)) and not os.path.exists(model_path):
             print(f"Không tìm thấy mô hình Fine-tuned tại {model_path}. Tự động chuyển sang mô hình Pretrained.")
             model_path = MODEL_CONFIGS[lang]
     else:
         model_path = MODEL_CONFIGS[lang]
 
-    model = SentenceTransformer(model_path)
+    try:
+        model = SentenceTransformer(model_path)
+    except Exception as e:
+        print(f"Lỗi tải mô hình {model_path}: {e}. Đang thử tải mô hình Pretrained mặc định...")
+        model_path = MODEL_CONFIGS[lang]
+        model = SentenceTransformer(model_path)
+
     _LOADED_MODELS[key] = model
     return model
 
