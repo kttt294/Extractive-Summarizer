@@ -22,14 +22,14 @@ except ImportError:
     from summarizer import compute_k_adaptive, kmeans_cluster, filter_redundant, reorder_by_original, diversity_score
     from evaluate import run_lead3_baseline, run_textrank_baseline, run_sbert_no_kmeans_pipeline, run_sbert_pipeline, compute_bertscore_f1
 
-def evaluate_extra_framework(dataset_name, subset, text_col, summary_col, sample_count=2000, lang='en'):
+def evaluate_extra_framework(dataset_name, subset, text_col, summary_col, sample_count=2000, lang='en', split='test'):
     divider = "=" * 126
     print(f"\nĐánh giá trên tập dữ liệu {dataset_name} ({subset}) - Số lượng: {sample_count}\n")
     
     if subset:
-        ds = load_dataset(dataset_name, subset, split='test', trust_remote_code=True)
+        ds = load_dataset(dataset_name, subset, split=split, trust_remote_code=True)
     else:
-        ds = load_dataset(dataset_name, split='test', trust_remote_code=True)
+        ds = load_dataset(dataset_name, split=split, trust_remote_code=True)
     
     ds = ds.select(range(min(sample_count, len(ds))))
     
@@ -141,8 +141,8 @@ def evaluate_extra_framework(dataset_name, subset, text_col, summary_col, sample
 
 def run_extra_evaluations(num_samples=2000):
     print(f"\nĐánh giá trên ngôn ngữ EN - Số lượng: {num_samples}\n")
-    evaluate_extra_framework("ccdv/pubmed-summarization", "document", "article", "abstract", num_samples, lang='en')
-    evaluate_extra_framework("dany0407/reddit_tifu_long", "", "documents", "tldr", num_samples, lang='en')
+    evaluate_extra_framework("ccdv/pubmed-summarization", "document", "article", "abstract", num_samples, lang='en', split='test')
+    evaluate_extra_framework("dany0407/reddit_tifu_long", "", "documents", "tldr", num_samples, lang='en', split='train')
 
 if __name__ == '__main__':
     run_extra_evaluations(2000)
