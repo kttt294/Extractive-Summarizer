@@ -140,9 +140,9 @@ def evaluate_extra_framework(dataset_name, subset, text_col, summary_col, sample
     print(divider + "\n\n")
 
 def run_extra_evaluations(num_samples=2000):
-    print(f"\nĐánh giá trên ngôn ngữ EN - Cấu hình mô hình Zero-Shot - Số lượng: {num_samples}\n")
+    print(f"\nĐánh giá trên ngôn ngữ EN - Số lượng: {num_samples}\n")
     evaluate_extra_framework("ccdv/pubmed-summarization", "document", "article", "abstract", num_samples, lang='en')
-    evaluate_extra_framework("reddit_tifu", "long", "documents", "tldr", num_samples, lang='en')
+    evaluate_extra_framework("dany0407/reddit_tifu_long", "", "documents", "tldr", num_samples, lang='en')
 
 if __name__ == '__main__':
     run_extra_evaluations(2000)
