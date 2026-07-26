@@ -1,7 +1,6 @@
 # Extractive Summarizer AI: SBERT Fine-Tuned + K-Means
 
-
-**Google Colab Notebook:** [Mở Notebook Thực nghiệm trên Google Colab](https://colab.research.google.com/drive/1Y28wbSRjE1IlshfOnID0GcUP_8I_5lLz)
+**Google Colab Notebook:** [Mở Notebook trên Google Colab](https://colab.research.google.com/drive/1Y28wbSRjE1IlshfOnID0GcUP_8I_5lLz)
 
 Mô hình tóm tắt văn bản trích xuất (Extractive Summarization) song ngữ Anh - Việt ứng dụng **Sentence-BERT Fine-Tuned**, **K-Means Clustering**, **Dynamic Adaptive K**, **Post-filtering (Lọc trùng Cosine)** và **Khung Đánh giá Kép (Intrinsic & Extrinsic Metrics)**.
 

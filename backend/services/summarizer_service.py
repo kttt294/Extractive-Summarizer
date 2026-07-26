@@ -26,8 +26,15 @@ def process_summarization(text: str, user_lang: str = 'auto', length: str = 'med
     if not sentences:
         raise ValueError("Văn bản quá ngắn hoặc không chứa câu hợp lệ để tóm tắt.")
 
+    # Chiến lược Production: Bắt buộc dùng Fine-Tuned cho Tiếng Việt (do hiệu quả vượt trội),
+    # và dùng Pretrained cho Tiếng Anh (do hiện tượng bão hòa Ceiling Effect, tiết kiệm API calls/RAM).
+    if lang == 'vi':
+        actual_use_finetuned = True
+    else:
+        actual_use_finetuned = False
+
     # 3. SBERT Sentence Embedding
-    embeddings = embed_sentences(sentences, lang=lang, use_finetuned=use_finetuned)
+    embeddings = embed_sentences(sentences, lang=lang, use_finetuned=actual_use_finetuned)
 
     # 4. Compute Adaptive K
     kmeans_k, target_k = compute_k_adaptive(len(sentences), summary_length=length, enable_buffer=True)

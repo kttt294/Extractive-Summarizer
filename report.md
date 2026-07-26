@@ -39,7 +39,7 @@ Việc lựa chọn 2 bộ dữ liệu **CNN/DailyMail** (Tiếng Anh) và **VND
 ### 2.3. Pretrained SBERT (Song ngữ Anh - Việt)
 
 * **Bản chất Kỹ thuật:** Mô hình Bi-Encoder Transformer đã qua tiền huấn luyện chung trên các tập dữ liệu Similarity/NLI [Reimers & Gurevych, 2019].
-* **Cấu hình Nạp weights & Giải trình Kích thước Mô hình (88MB vs 527MB):**
+* **Cấu hình Nạp weights & Giải trình Kích thước Mô hình (Lazy Loading ~1GB):**
   * **Tiếng Anh (`en`):** `sentence-transformers/all-mpnet-base-v2` (Kích thước weights: **~438 MB**). Mô hình ngôn ngữ 768 chiều lớn và mạnh mẽ nhất của hệ sinh thái SentenceTransformers hiện tại, được sử dụng để tối đa hóa khả năng biểu diễn ngữ nghĩa tương tự như mô hình tiếng Việt.
   * **Tiếng Việt (`vi`):** `bkai-foundation-models/vietnamese-bi-encoder` (Kích thước weights: **~527 MB**). Phát triển trên nền PhoBERT-base (135M tham số, 12 lớp Transformer, hidden dimension 768), tích hợp bảng từ vựng 64,000 token chứa các từ ghép đơn lập đặc đặc thù bản địa.
   * **Kết luận Đồ án:** Cả hai mô hình đều đại diện cho các giải pháp **State-of-the-Art (SOTA)** tối ưu nhất cho từng ngôn ngữ tương ứng, đạt sự cân bằng hoàn hảo giữa dung lượng, tốc độ suy luận và độ chính xác ngữ nghĩa.
@@ -149,10 +149,10 @@ $$
 
 Quá trình Fine-tune được thực hiện **2 lượt riêng biệt** trên GPU Google Colab:
 
-1. **Lượt 1 (Tiếng Anh):** Base `all-MiniLM-L6-v2` + Dataset CNN/DailyMail $\rightarrow$ Output `./models/finetuned_sbert_en`
+1. **Lượt 1 (Tiếng Anh):** Base `all-mpnet-base-v2` + Dataset CNN/DailyMail $\rightarrow$ Output `./models/finetuned_sbert_en`
 2. **Lượt 2 (Tiếng Việt):** Base `vietnamese-bi-encoder` + Dataset VietNews $\rightarrow$ Output `./models/finetuned_sbert_vi`
 
-* **Đóng gói Checkpoint:** Code tự động đóng gói file weights thành `finetuned_sbert_vi.zip` và kích hoạt `files.download()` tải trực tiếp về máy local.
+* **Đóng gói Checkpoint & Phân phối:** Code tự động đóng gói file weights thành `finetuned_sbert_vi.zip` và kích hoạt `files.download()` tải trực tiếp về máy local. Đồng thời, hệ thống tích hợp API tự động Push bộ trọng số lên Hugging Face Model Hub (tại repository `kttt294/vietnamese-sbert-finetuned`) để cộng đồng mã nguồn mở có thể tải về và sử dụng ngay lập tức thông qua thư viện `sentence-transformers`.
 * **Tối ưu hóa Luồng Nạp Dữ liệu với PyTorch `DataLoader` (`batch_size=32`, `shuffle=True`):**
   Danh sách các cặp câu Oracle được đóng gói thông qua PyTorch `DataLoader` với `batch_size = 32` để chia nhỏ dữ liệu thành các lô tính toán vừa vặn với bộ nhớ VRAM GPU. Tùy chọn `shuffle = True` tự động xáo trộn ngẫu nhiên thứ tự các cặp câu PULL/PUSH trước mỗi epoch huấn luyện, giúp triệt tiêu hiện tượng lệch thứ tự (*Order Bias*) và hỗ trợ thuật toán tối ưu AdamW tính toán gradient ngẫu nhiên (*Stochastic Gradient Descent*) đạt độ hội tụ và tổng quát hóa tối ưu.
 * **Nguyên tắc Chia tách Dữ liệu Độc lập Tuyệt đối (`split="train"` vs `split="test"`):**
@@ -385,6 +385,19 @@ Một phân tích quan trọng về phương pháp luận đánh giá trong bài
 
 ---
 
+#### 5.3.4. Hạn chế của Dữ liệu Báo chí và Phản biện Tổng quát hóa (Cross-domain Generalization)
+
+Xuyên suốt Đồ án, mục tiêu cốt lõi là xây dựng một hệ thống Tóm tắt Đa lĩnh vực (Domain-Agnostic). Tuy nhiên, quy trình Fine-tuning ở Giai đoạn 1 lại bắt buộc phải thực hiện trên tập dữ liệu báo chí (VietNews). Điều này dấy lên một lo ngại học thuật: *Liệu mô hình có bị thiên kiến (bias) và chỉ tóm tắt tốt báo chí hay không?*
+
+Để phản biện lại luận điểm này, nhóm nghiên cứu xin đưa ra 3 lập luận vững chắc:
+
+1. **Sự khan hiếm Dữ liệu Tiếng Việt (Data Scarcity):** Hiện tại, VietNews là bộ dữ liệu tóm tắt văn bản duy nhất của Tiếng Việt đạt tiêu chuẩn về quy mô (100,000+ bài) và chất lượng. Việc không thể tìm thấy các bộ dữ liệu quy mô lớn trong lĩnh vực Y tế, Pháp luật hay Tài chính bằng Tiếng Việt là một hạn chế khách quan của ngành NLP nước nhà, buộc chúng ta phải dùng báo chí làm "bàn đạp" học ngữ nghĩa.
+2. **Khử nhiễu nhờ Kiến trúc Lai (Hybrid Architecture):** Nếu sử dụng các mô hình SOTA Supervised Classification như BERTSumExt hay MatchSum, việc huấn luyện trên báo chí sẽ biến mô hình thành "kẻ học vẹt" cấu trúc Kim tự tháp ngược (chỉ biết lấy 3 câu đầu). Ngược lại, Đồ án sử dụng SBERT chỉ để Học Không gian Vector (Representation Learning), còn khâu trích xuất chọn câu lại giao phó hoàn toàn cho thuật toán K-Means (Unsupervised Zero-shot). K-Means không hề biết về vị trí câu hay cấu trúc bài báo lúc huấn luyện, do đó bảo toàn được khả năng Tóm tắt Đa lĩnh vực (Generalization) khi áp dụng vào Hợp đồng hay Báo cáo tài chính.
+3. **Điểm yếu Tương đồng của SOTA:** Theo bài báo gốc, BERTSumExt (2019) chỉ được thử nghiệm trên 3 tập báo chí (CNN/DM, NYT, XSum). Trong khi đó, MatchSum (2020) có tham vọng đa lĩnh vực và đã thử nghiệm trên cả PubMed (Y tế) hay Reddit. TUY NHIÊN, để làm được điều đó, tác giả MatchSum phải huấn luyện lại mô hình bằng các tập dữ liệu Y tế/Mạng xã hội khổng lồ có sẵn nhãn của tiếng Anh. Đối với tiếng Việt, chúng ta hoàn toàn không có dữ liệu có nhãn cho các lĩnh vực này. Nếu ép các mô hình Học có giám sát mạnh (Strong Supervised Learning) như MatchSum học trên báo VietNews rồi áp dụng dự đoán Hợp đồng pháp lý (Zero-shot Cross-domain), chúng sẽ thất bại nặng nề do bị "học vẹt" vị trí câu. Đó là lý do kiến trúc tách rời Học biểu diễn (SBERT) và Trích xuất không giám sát (K-Means) của Đồ án là giải pháp thực tiễn nhất cho môi trường Low-resource như tiếng Việt.
+
+
+---
+
 ## 6. Siêu tham số $\alpha$ ($25\%$) và Thuật toán Dynamic Adaptive K
 
 Số câu tóm tắt $K$ được tính toán tự động và linh hoạt theo công thức:
@@ -443,7 +456,7 @@ def get_sbert_model(lang: str = 'vi', use_finetuned: bool = False) -> SentenceTr
 ```
 
 * **Chiến lược Nạp theo Nhu cầu (Lazy Loading vs. Eager Loading):**
-  1. **Tránh Lãng phí RAM / GPU VRAM:** Nếu sử dụng *Eager Loading* (nạp sẵn cả 4 mô hình Tiếng Anh/Tiếng Việt từ khi bật Server), dung lượng RAM chiếm dụng sẽ bị đẩy lên tới trên 3.0 GB. Chiến lược *Lazy Loading* chỉ nạp đúng 1 mô hình khi có người dùng yêu cầu, giúp giữ bộ nhớ RAM ở mức tối thiểu (chỉ từ 88MB - 527MB).
+  1. **Tránh Lãng phí RAM / GPU VRAM:** Nếu sử dụng *Eager Loading* (nạp sẵn cả 4 mô hình Tiếng Anh/Tiếng Việt từ khi bật Server), dung lượng RAM chiếm dụng sẽ bị đẩy lên rất cao. Chiến lược *Lazy Loading* chỉ nạp đúng 1 mô hình khi có người dùng yêu cầu, giúp giữ bộ nhớ RAM ở mức tối ưu (quanh mức ~1GB).
   2. **Giải quyết Nghẽn khởi động Server (Startup Delay):** Backend FastAPI khởi động tức thì trong **0.5 giây** thay vì phải ngồi chờ 15 - 25 giây để nạp toàn bộ file weights.
   3. **Chống lỗi Tràn bộ nhớ Đám mây (OOM - Out of Memory Prevention):** Giúp hệ thống vận hành an toàn 100% trên các môi trường Cloud Hosting bị giới hạn cứng RAM (Render, Google Colab free tier, AWS EC2 micro).
 
@@ -465,3 +478,4 @@ def get_sbert_model(lang: str = 'vi', use_finetuned: bool = False) -> SentenceTr
 12. **[Radev et al., 2004]** Radev, D. R., Jing, H., Mačák, M., & Tam, D. (2004). *Centroid-based summarization of multiple documents*. Information Processing & Management, 40(6), 919-938. (Bài báo MEAD chứng minh luật suy giảm vị trí câu căn bậc hai $1/\sqrt{i+1}$ trong báo chí).
 13. **[Nenkova & Vanderwende, 2005]** Nenkova, A., & Vanderwende, L. (2005). *The Impact of Frequency and Position on Text Summarization*. Microsoft Research Tech Report, MSR-TR-2005-101.
 14. **[Rossiello et al., 2017]** Rossiello, G., Basile, P., & Semeraro, G. (2017). *Centroid-based Text Summarization using Word Embeddings*. In Proceedings of EMNLP 2017 Workshop on New Frontiers in Summarization, pp. 1-6. (Bài báo chứng minh mô hình kết hợp tuyến tính giữa Vector Centroid và Position Bias).
+15. **[Vaswani et al., 2017]** Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A. N., Kaiser, L., & Polosukhin, I. (2017). *Attention Is All You Need*. In Advances in Neural Information Processing Systems (NeurIPS 2017), pp. 5998-6008. (Bài báo gốc đề xuất mạng Transformer và công thức toán học tính toán O(N^2) của cơ chế Self-Attention).

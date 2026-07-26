@@ -1,0 +1,26 @@
+def write(doc, add_heading_1, add_heading_2, add_heading_3, add_p, add_bullet, add_code, style_table):
+    add_heading_1("CHƯƠNG 3. CÁC NGHIÊN CỨU LIÊN QUAN")
+
+    add_heading_2("3.1. Các phương pháp Cơ bản (Heuristics) và Quy tắc Vị trí")
+    add_p("Trong những giai đoạn đầu của xử lý ngôn ngữ tự nhiên, các phương pháp tóm tắt văn bản phụ thuộc nặng nề vào các quy tắc Heuristics, chủ yếu khai thác sự thiên vị về vị trí của bài báo (Positional Bias). Nổi bật nhất là phương pháp Lead-3.")
+    add_p("Lead-3 là một quy tắc kinh nghiệm cực kỳ phổ biến trong báo chí truyền thống phương Tây. Dựa trên mô hình \"Kim tự tháp ngược\" (Inverted Pyramid), các phóng viên luôn đưa tất cả thông tin quan trọng nhất (Ai? Cái gì? Khi nào? Ở đâu? Tại sao?) vào đoạn mở đầu (Lead paragraph) để thu hút độc giả. Lead-3 đơn giản là trích xuất 3 câu đầu tiên của bài báo làm tóm tắt. Mặc dù vô cùng thô sơ (zero-learning parameter), thuật toán này hoạt động hiệu quả đáng kinh ngạc trên tập dữ liệu CNN/DailyMail (Tiếng Anh), mang lại điểm ROUGE-1 lên tới 31.02% (theo khảo sát của Nallapati et al., 2016). Tuy nhiên, nhược điểm chí mạng của nó là bỏ qua hoàn toàn diễn biến ở thân bài và phần kết luận, khiến độ đa dạng thông tin (Diversity) bằng 0. Khi áp dụng sang văn phong báo chí Tiếng Việt linh hoạt hơn, phương pháp này dễ dàng bị đánh bại bởi các mô hình học sâu.")
+
+    add_heading_2("3.2. Thuật toán Đồ thị Dựa trên Tần suất Từ (TextRank)")
+    add_p("Lấy cảm hứng từ thuật toán xếp hạng trang web PageRank của Google, Mihalcea & Tarau (2004) đã đề xuất TextRank - mô hình đồ thị không giám sát đầu tiên cho NLP.")
+    add_p("Thuật toán hoạt động theo các bước sau:")
+    add_bullet("Coi mỗi câu trong văn bản là một Đỉnh (Vertex) trên đồ thị.", "1. Xây dựng Đồ thị: ")
+    add_bullet("Tính độ tương đồng giữa 2 câu bất kỳ dựa trên số lượng từ vựng trùng lặp bề mặt (Surface Lexical Overlap). Đường nối (Edge) giữa 2 câu có trọng số tỷ lệ thuận với số từ trùng nhau.", "2. Tạo Trọng số Cạnh: ")
+    add_bullet("Thuật toán PageRank được chạy lặp lại (Iterative) cho đến khi hội tụ. Một câu sẽ nhận được điểm số cao nếu nó chia sẻ nhiều từ vựng với các câu có điểm số cao khác.", "3. Lan truyền Điểm số (Random Walk): ")
+    add_p("TextRank rất nhẹ và không cần nạp GPU, nhưng bị giới hạn bởi sự \"mù lòa\" ngữ nghĩa: Nó không hiểu các từ đồng nghĩa (ví dụ: \"xe hơi\" và \"ô tô\"), không hiểu cấu trúc ngữ pháp và rất dễ bị lừa bởi các bài viết lặp từ liên tục (Spamming Keywords).")
+
+    add_heading_2("3.3. Kỷ nguyên Deep Learning Truyền thống: RNN, LSTM và GRU")
+    add_p("Sự ra đời của Mạng nơ-ron Hồi quy (Recurrent Neural Network - RNN) mở ra kỷ nguyên mới. RNN xử lý văn bản một cách tuần tự từ trái qua phải, cho phép mạng lưới lưu giữ bộ nhớ (Hidden State) của các từ trước đó. Tuy nhiên, RNN mắc lỗi Tiêu biến Đạo hàm (Vanishing Gradient), khiến nó quên sạch thông tin ở đầu câu khi đọc đến cuối một câu văn quá dài.")
+    add_p("Long Short-Term Memory (LSTM) do Hochreiter & Schmidhuber (1997) đề xuất khắc phục RNN bằng cách thêm \"Tế bào bộ nhớ\" (Cell State) và 3 Cổng (Gates): Cổng Quên (Forget Gate), Cổng Đầu vào (Input Gate) và Cổng Đầu ra (Output Gate). Toán học của LSTM cho phép mạng lưới tự quyết định thông tin nào cần nhớ dài hạn, thông tin nào cần xóa bỏ. Mặc dù rất thành công trong bài toán dịch máy (Seq2Seq), LSTM có tốc độ huấn luyện cực chậm vì không thể tính toán song song (Not Parallelizable).")
+    add_p("Gated Recurrent Unit (GRU) là bản rút gọn của LSTM, gộp Cổng Quên và Cổng Đầu vào thành một cổng duy nhất để tăng tốc tính toán nhưng vẫn gặp phải rào cản tốc độ tương tự.")
+
+    add_heading_2("3.4. Mô hình Bi-Encoder Zero-shot (Pretrained SBERT)")
+    add_p("Với sự thống trị của Transformer, nhiều nghiên cứu sử dụng trực tiếp mô hình SBERT chưa qua tinh chỉnh (Pretrained) để trích xuất Vector câu, sau đó kết hợp các thuật toán học máy cổ điển như K-Means hoặc Maximal Marginal Relevance (MMR) [Carbonell & Goldstein, 1998] để phân cụm và chọn câu. Trên không gian Tiếng Anh, SBERT Pretrained hoạt động khá tốt do được huấn luyện bằng Contrastive Learning trên 1 Tỷ cặp câu SNLI. Tuy nhiên, khi áp dụng vào Tiếng Việt (zero-shot trên miền tin tức), các vector có xu hướng hội tụ ngẫu nhiên, cụm K-Means bị nhòe (Silhouette Score cực thấp), dẫn đến việc chọn nhầm các câu rác báo chí. Điều này đặt ra bài toán cấp thiết là phải tinh chỉnh (Fine-Tune) lại mô hình để nắn lại hình học không gian Vector.")
+
+    add_heading_2("3.5. Sự Cần thiết của Một Phương pháp Mới: Fine-Tuning kết hợp Đóng cụm Toán học")
+    add_p("Như vậy, một khoảng trống nghiên cứu (Research Gap) lớn đã lộ ra: Các mô hình kinh điển như TextRank quá ngây thơ về ngữ nghĩa; các mô hình LLM sinh văn bản thì đắt đỏ và dễ bịa đặt; các mô hình Embedding Zero-shot lại hoạt động kém trên Tiếng Việt do thiếu nắn chỉnh chuyên sâu.")
+    add_p("Trong chương tiếp theo, Đồ án sẽ đề xuất một phương pháp lai (Hybrid Framework) 2 giai đoạn: Học cách biểu diễn không gian ngữ nghĩa bằng Supervised Fine-Tuning với ROUGE Oracle (nắn hình học Vector) và Lựa chọn Trích xuất linh hoạt bằng K-Means phân cụm (đảm bảo đa dạng chủ đề) và Post-Filtering (khử trùng lặp). Phương pháp này nhắm tới việc kế thừa ưu điểm của mọi trường phái trong khi triệt tiêu tối đa các khuyết điểm chí mạng.")
