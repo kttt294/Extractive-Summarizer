@@ -44,5 +44,5 @@ def embed_sentences(sentences: List[Tuple[int, str]], lang: str = 'vi', use_fine
         return np.array([])
     texts = [text for _, text in sentences]
     model = get_sbert_model(lang=lang, use_finetuned=use_finetuned)
-    embeddings = model.encode(texts, convert_to_numpy=True, show_progress_bar=False)
+    embeddings = model.encode(texts, convert_to_numpy=True, show_progress_bar=False, normalize_embeddings=True)
     return embeddings

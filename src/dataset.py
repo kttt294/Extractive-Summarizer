@@ -86,7 +86,7 @@ def apply_quality_stratified_sampling(ds, sample_count: int, article_key: str = 
     return combined[:sample_count]
 
 
-def load_evaluation_dataset(lang: str = 'en', sample_count: int = 200, split: str = 'test'):
+def load_evaluation_dataset(lang: str = 'en', sample_count: int = 200, split: str = 'test', custom_dataset: str = None):
     """
     Nạp dữ liệu chuẩn từ Hugging Face Hub bằng Chiến thuật Lấy mẫu Phân tầng & Lọc Chất lượng.
     Tham số split: 'train' (cho Fine-Tuning) hoặc 'test' (cho Đánh giá độc lập).
@@ -94,6 +94,16 @@ def load_evaluation_dataset(lang: str = 'en', sample_count: int = 200, split: st
     previous_verbosity = datasets.logging.get_verbosity()
     datasets.logging.set_verbosity_error()
     
+    if custom_dataset:
+        try:
+            ds = load_dataset(custom_dataset, split=split)
+            samples = apply_quality_stratified_sampling(ds, sample_count=sample_count, article_key='article', summary_key='highlights')
+            datasets.logging.set_verbosity(previous_verbosity)
+            return samples
+        except Exception as e:
+            datasets.logging.set_verbosity(previous_verbosity)
+            raise RuntimeError(f"LỖI: Không thể nạp tập dữ liệu tùy chỉnh {custom_dataset}. Chi tiết: {e}")
+
     if lang == 'en':
         ds = None
         for dataset_name in ["cnn_dailymail", "abisee/cnn_dailymail"]:
