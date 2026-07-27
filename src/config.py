@@ -9,15 +9,36 @@ MODEL_CONFIGS = {
 }
 
 # Các siêu tham số tối ưu (Thu được từ quá trình Grid Search Evaluation)
-OPTIMAL_HYPERPARAMS = {
-    'alpha': 0.15,        # Tỷ lệ chọn câu K%
-    'theta': 0.80,        # Ngưỡng Cosine Similarity để lọc trùng ngữ nghĩa (Post-filtering)
-    'lambda': 0.35,       # Trọng số ưu tiên vị trí câu đầu bài (Position-aware weighting)
-    'min_words': 4,       # Số từ tối thiểu cho một câu hợp lệ (Giữ được tiêu đề & lọc cụm rác <4 từ)
-    'max_words': 90,      # Số từ tối đa cho một câu hợp lệ (Bao quát được các câu báo chí phức hợp)
-    'buffer_k': 2         # Số lượng cụm đệm cho K-Means để bù đắp sau khi lọc trùng
+OPTIMAL_HYPERPARAMS_VI = {
+    'alpha': 0.10,        # Tỷ lệ chọn câu K% (Việt)
+    'theta': 0.70,        # Ngưỡng Cosine Similarity để lọc trùng ngữ nghĩa (Việt)
+    'lambda': 0.20,       # Trọng số ưu tiên vị trí câu đầu bài (Việt)
+    'min_words': 4,       
+    'max_words': 90,      
+    'buffer_k': 2         
 }
 
+OPTIMAL_HYPERPARAMS_EN = {
+    'alpha': 0.05,        # Tỷ lệ chọn câu K% (Anh)
+    'theta': 0.65,        # Ngưỡng Cosine Similarity để lọc trùng ngữ nghĩa (Anh)
+    'lambda': 0.50,       # Trọng số ưu tiên vị trí câu đầu bài (Anh)
+    'min_words': 4,       
+    'max_words': 90,      
+    'buffer_k': 2         
+}
+
+# Khởi tạo mặc định là Tiếng Việt
+OPTIMAL_HYPERPARAMS = OPTIMAL_HYPERPARAMS_VI.copy()
+
+def set_language_config(lang: str):
+    """
+    Tự động chuyển đổi bộ siêu tham số cho phù hợp với đặc thù phân phối của ngôn ngữ
+    """
+    global OPTIMAL_HYPERPARAMS
+    if lang == 'en':
+        OPTIMAL_HYPERPARAMS.update(OPTIMAL_HYPERPARAMS_EN)
+    else:
+        OPTIMAL_HYPERPARAMS.update(OPTIMAL_HYPERPARAMS_VI)
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MODELS_DIR = os.path.join(BASE_DIR, 'models')

@@ -34,7 +34,7 @@ def evaluate_extra_framework(dataset_name, subset, text_col, summary_col, sample
     ds = ds.select(range(min(sample_count, len(ds))))
     
     scorer = rouge_scorer.RougeScorer(['rouge1', 'rouge2', 'rougeL'], use_stemmer=True)
-    models_to_test = ['Lead-3', 'TextRank', 'Pretrained-SBERT-KMeans', 'SBERT-No-KMeans', 'FineTuned-SBERT-KMeans']
+    models_to_test = ['Lead-3', 'TextRank', 'Pretrained-SBERT-KMeans', 'SBERT-No-KMeans', 'FineTuned-SBERT-KMeans', 'FineTuned-Neutral-Lambda']
     results = {m: {'r1': [], 'r2': [], 'rl': [], 'sbert_cosine': [], 'sil': [], 'div': [], 'comp': []} for m in models_to_test}
     
     for item in tqdm(ds, desc=f"Đang xử lý {dataset_name}"):
@@ -112,6 +112,35 @@ def evaluate_extra_framework(dataset_name, subset, text_col, summary_col, sample
             results['FineTuned-SBERT-KMeans']['sil'].append(sil_ft)
             results['FineTuned-SBERT-KMeans']['div'].append(div_ft)
             results['FineTuned-SBERT-KMeans']['comp'].append((1.0 - len(ft_summary.split()) / art_words) * 100)
+
+            # 6. Fine-Tuned SBERT + K-Means (Neutral Lambda = 0.0, No Length Filter)
+            from src import config
+            lang_dict = config.OPTIMAL_HYPERPARAMS_EN if lang == 'en' else config.OPTIMAL_HYPERPARAMS_VI
+            
+            original_lambda = lang_dict.get('lambda', 0.35)
+            original_min = lang_dict.get('min_words', 4)
+            original_max = lang_dict.get('max_words', 90)
+            
+            # Khởi tạo không gian trung lập: Tắt thiên vị vị trí và Tắt bộ lọc độ dài
+            lang_dict['lambda'] = 0.0
+            lang_dict['min_words'] = 1
+            lang_dict['max_words'] = 9999
+            
+            ft_neu_summary, _, sil_ft_neu, div_ft_neu = run_sbert_pipeline(article, lang=lang, use_finetuned=True)
+            
+            # Trả lại tham số gốc cho hệ thống báo chí
+            lang_dict['lambda'] = original_lambda
+            lang_dict['min_words'] = original_min
+            lang_dict['max_words'] = original_max
+            
+            s_ft_neu = scorer.score(reference, ft_neu_summary)
+            results['FineTuned-Neutral-Lambda']['r1'].append(s_ft_neu['rouge1'].fmeasure)
+            results['FineTuned-Neutral-Lambda']['r2'].append(s_ft_neu['rouge2'].fmeasure)
+            results['FineTuned-Neutral-Lambda']['rl'].append(s_ft_neu['rougeL'].fmeasure)
+            results['FineTuned-Neutral-Lambda']['sbert_cosine'].append(compute_sbert_cosine_similarity(ft_neu_summary, reference, lang=lang))
+            results['FineTuned-Neutral-Lambda']['sil'].append(sil_ft_neu)
+            results['FineTuned-Neutral-Lambda']['div'].append(div_ft_neu)
+            results['FineTuned-Neutral-Lambda']['comp'].append((1.0 - len(ft_neu_summary.split()) / art_words) * 100)
         except Exception:
             continue
             

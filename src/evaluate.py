@@ -72,6 +72,9 @@ def run_sbert_no_kmeans_pipeline(text: str, lang: str = 'en', use_finetuned: boo
     Ablation Study: Fine-Tuned SBERT + Direct Top-K (Không có K-Means)
     Lấy Top-K câu có khoảng cách Cosine gần nhất với Vector trung bình toàn bài báo
     """
+    import src.config as config
+    config.set_language_config(lang)
+    
     sentences = preprocess_text(text, lang=lang)
     if len(sentences) == 0:
         return "", [], 0.0, 0.0
@@ -104,6 +107,9 @@ def run_sbert_pipeline(text: str, lang: str = 'en', use_finetuned: bool = False)
     Chạy toàn bộ Pipeline 2 Giai đoạn
     Tiền xử lý -> SBERT Embedding -> K thích ứng -> K-Means + Lọc trùng -> Sắp xếp lại thứ tự gốc
     """
+    import src.config as config
+    config.set_language_config(lang)
+    
     sentences = preprocess_text(text, lang=lang)
     if len(sentences) == 0:
         return "", [], 0.0, 0.0
@@ -153,15 +159,23 @@ def compute_sbert_cosine_similarity(summary: str, reference: str, lang: str = 'e
     except Exception:
         return 0.0
 
+# Cache toàn cục cho BERTScorer
+_bert_scorer = None
+_bert_scorer_lang = None
+
 def compute_real_bertscore(summary: str, reference: str, lang: str = 'en') -> float:
+    global _bert_scorer, _bert_scorer_lang
     try:
-        from bert_score import score
-        model_type = "bert-base-multilingual-cased" if lang == 'vi' else "roberta-large"
-        P, R, F1 = score([summary], [reference], lang=lang, model_type=model_type, verbose=False)
+        from bert_score import BERTScorer
+        if _bert_scorer is None or _bert_scorer_lang != lang:
+            model_type = "bert-base-multilingual-cased" if lang == 'vi' else "roberta-large"
+            _bert_scorer = BERTScorer(lang=lang, model_type=model_type)
+            _bert_scorer_lang = lang
+            
+        P, R, F1 = _bert_scorer.score([summary], [reference])
         return float(F1.mean().item())
     except Exception:
         return 0.0
-
 
 def evaluate_framework(lang: str = 'en', sample_count: int = 2000):
     divider = "=" * 98

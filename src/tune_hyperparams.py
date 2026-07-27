@@ -60,9 +60,9 @@ def grid_search(lang='vi', sample_count=20, dataset_name=None):
                     article = sample['article']
                     reference = sample['highlights']
                     summary = run_pipeline_with_hyperparams(article, lang, True, alpha, theta, pos_lambda)
-                if summary:
-                    score = scorer.score(reference, summary)
-                    rouge1_scores.append(score['rouge1'].fmeasure)
+                    if summary:
+                        score = scorer.score(reference, summary)
+                        rouge1_scores.append(score['rouge1'].fmeasure)
             
                 mean_rouge1 = np.mean(rouge1_scores) if rouge1_scores else 0.0
                 results[(pos_lambda, alpha, theta)] = mean_rouge1

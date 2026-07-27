@@ -110,6 +110,18 @@ def filter_redundant(indices: List[int], sents: List[str], embs: List[np.ndarray
             if len(keep_indices) >= target_sents:
                 break
 
+    # Tránh việc Filter quá gắt (do không gian vector bị thu hẹp) làm mất câu
+    # Cứ lấy bù thêm câu cho tới khi đủ target_sents
+    if len(keep_indices) < target_sents:
+        for i in range(len(sents)):
+            if i not in keep_indices:
+                keep_indices.append(i)
+                if len(keep_indices) >= target_sents:
+                    break
+                    
+    # Sắp xếp lại theo đúng thứ tự bài báo gốc
+    keep_indices.sort()
+
     return (
         [indices[i] for i in keep_indices],
         [sents[i] for i in keep_indices],
