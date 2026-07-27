@@ -14,7 +14,6 @@ Mô hình tóm tắt văn bản trích xuất (Extractive Summarization) song ng
 2. **Fine-Tuning SBERT & Thuật toán Dynamic Adaptive K:**
    - Tối ưu hóa mô hình SBERT với hàm mất mát `CosineSimilarityLoss` / `MultipleNegativesRankingLoss`.
    - Tính toán số cụm $K$ và số câu mục tiêu thích ứng toán học hoàn toàn $K = \text{round}(N \times \alpha \times \text{scale})$ theo 3 chế độ độ dài (Ngắn gọn, Tiêu chuẩn, Chi tiết).
-   - Đạt ROUGE-1 **52.87%** và ROUGE-L **31.03%** trên tập dữ liệu VietNews.
 3. **Sản phẩm Web App Full-Stack (FastAPI + React + TailwindCSS):**
    - Tự động nhận diện ngôn ngữ bài viết (`langdetect`).
    - Cào dữ liệu theo định hướng vùng địa lý (`vn-vi`, `us-en`) khi tìm kiếm tin tức theo từ khóa chủ đề.
