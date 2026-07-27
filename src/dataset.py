@@ -6,15 +6,12 @@ from typing import List, Tuple
 from datasets import load_dataset
 from rouge_score import rouge_scorer
 from sentence_transformers import InputExample
-
-# Tắt toàn bộ cảnh báo dư thừa của Hugging Face Datasets & Warnings
 warnings.filterwarnings("ignore")
 datasets.logging.set_verbosity_error()
 logging.getLogger("datasets").setLevel(logging.ERROR)
 logging.getLogger("datasets.load").setLevel(logging.ERROR)
 logging.getLogger("datasets.builder").setLevel(logging.ERROR)
 
-# Đảm bảo punkt và punkt_tab được tải sẵn cho Natural Language Toolkit (NLTK)
 for resource in ['punkt', 'punkt_tab']:
     try:
         nltk.data.find(f'tokenizers/{resource}')
@@ -24,10 +21,10 @@ for resource in ['punkt', 'punkt_tab']:
 
 def apply_quality_stratified_sampling(ds, sample_count: int, article_key: str = 'article', summary_key: str = 'highlights') -> List[dict]:
     """
-    Chiến thuật Lấy mẫu Phân tầng & Lọc Chất lượng (Quality-Aware Stratified Sampling):
-    1. Lọc chất lượng: Article >= 8 câu, Summary >= 2 câu.
-    2. Lọc mật độ nén: Summary words / Article words <= 0.40 (Loại bỏ rác format).
-    3. Phân tầng độ dài (Stratified Length-based Sampling):
+    Chiến thuật Lấy mẫu Phân tầng & Lọc:
+    1. Lọc: Article >= 8 câu, Summary >= 2 câu.
+    2. Lọc mật độ nén: Summary words / Article words <= 0.40.
+    3. Phân tầng độ dài:
        - Tầng Ngắn (8 - 15 câu): 33%
        - Tầng Trung bình (15 - 30 câu): 34%
        - Tầng Dài (> 30 câu): 33%
@@ -45,11 +42,9 @@ def apply_quality_stratified_sampling(ds, sample_count: int, article_key: str = 
         art_sents = [s.strip() for s in art.split('.') if len(s.strip()) > 5]
         summ_sents = [s.strip() for s in summ.split('.') if len(s.strip()) > 5]
 
-        # 1. Lọc chất lượng văn bản
         if len(art_sents) < 8 or len(summ_sents) < 2:
             continue
 
-        # 2. Lọc mật độ nén thông tin
         art_w = len(art.split())
         summ_w = len(summ.split())
         if art_w == 0 or (summ_w / art_w) > 0.40:
@@ -57,8 +52,8 @@ def apply_quality_stratified_sampling(ds, sample_count: int, article_key: str = 
 
         item = {'id': idx, 'article': art, 'highlights': summ}
         num_sents = len(art_sents)
-
-        # 3. Phân tầng theo độ dài bài báo
+        
+        # Phân tầng theo độ dài bài báo
         if num_sents <= 15 and len(tier_short) < target_per_tier:
             tier_short.append(item)
         elif 15 < num_sents <= 30 and len(tier_medium) < target_per_tier:

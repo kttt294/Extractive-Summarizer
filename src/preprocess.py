@@ -42,14 +42,12 @@ CAPTION_NOISE_KEYWORDS = [
 def is_noise_or_caption(sent: str) -> bool:
     s_lower = sent.lower().strip()
 
-    # 1. Matches common caption patterns or author credits
     for kw in CAPTION_NOISE_KEYWORDS:
         if s_lower.startswith(kw) or f"({kw})" in s_lower or f"[{kw}]" in s_lower:
             return True
         if kw in ['ảnh minh họa', 'ttxvn', 'chụp màn hình', 'bản quyền'] and kw in s_lower and len(s_lower.split()) < 14:
             return True
 
-    # 2. Pattern like "Việt Hà (TTXVN)" or "Nguyễn Lành/TTXVN" at short length
     if ('/ttxvn' in s_lower or '(ttxvn)' in s_lower or 'nhiếp ảnh' in s_lower or 'ảnh:' in s_lower) and len(s_lower.split()) < 14:
         return True
 

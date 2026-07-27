@@ -8,7 +8,7 @@ _LOADED_MODELS = {}
 
 def get_sbert_model(lang: str = 'vi', use_finetuned: bool = False) -> SentenceTransformer:
     """
-    Lazy loading mô hình SentenceTransformer (Pretrained hoặc Fine-Tuned).
+    Lazy loading mô hình SentenceTransformer (Pretrained hoặc Fine-Tuned)
     """
     key = f"{lang}_{'finetuned' if use_finetuned else 'pretrained'}"
     if key in _LOADED_MODELS:
@@ -16,7 +16,6 @@ def get_sbert_model(lang: str = 'vi', use_finetuned: bool = False) -> SentenceTr
 
     if use_finetuned:
         model_path = MODEL_CONFIGS['finetuned_vi'] if lang == 'vi' else MODEL_CONFIGS['finetuned_en']
-        # Kiểm tra nếu model_path là đường dẫn cục bộ bắt buộc (chứa ./ hoặc .\\ hoặc absolute path)
         if (model_path.startswith('./') or model_path.startswith('.\\') or os.path.isabs(model_path)) and not os.path.exists(model_path):
             print(f"Không tìm thấy mô hình Fine-tuned tại {model_path}. Tự động chuyển sang mô hình Pretrained.")
             model_path = MODEL_CONFIGS[lang]

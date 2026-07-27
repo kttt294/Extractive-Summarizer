@@ -14,7 +14,7 @@ def compute_k_adaptive(n_sentences: int, summary_length: str = 'medium', enable_
     if n_sentences <= 1:
         return 1, 1
 
-    alpha = OPTIMAL_HYPERPARAMS['alpha']  # 0.15 (Tỷ lệ nén tối ưu từ Grid Search)
+    alpha = OPTIMAL_HYPERPARAMS['alpha']
     scales = {'brief': 0.6, 'medium': 1.0, 'detailed': 1.6}
     scale = scales.get(summary_length, 1.0)
 
@@ -110,8 +110,6 @@ def filter_redundant(indices: List[int], sents: List[str], embs: List[np.ndarray
             if len(keep_indices) >= target_sents:
                 break
 
-    # Tránh việc Filter quá gắt (do không gian vector bị thu hẹp) làm mất câu
-    # Cứ lấy bù thêm câu cho tới khi đủ target_sents
     if len(keep_indices) < target_sents:
         for i in range(len(sents)):
             if i not in keep_indices:
@@ -139,7 +137,7 @@ def reorder_by_original(indices: List[int], sents: List[str]) -> List[str]:
 
 def diversity_score(embeddings: List[np.ndarray]) -> float:
     """
-    Tính chỉ số Đa dạng (Diversity Score = 1 - trung bình cộng Cosine Similarity giữa các cặp câu).
+    Tính chỉ số Đa dạng (Diversity Score = 1 - trung bình cộng Cosine Similarity giữa các cặp câu)
     """
     n = len(embeddings)
     if n < 2:

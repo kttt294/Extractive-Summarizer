@@ -15,7 +15,6 @@ def train_finetune_sbert(lang: str = 'vi', epochs: int = 3, batch_size: int = 32
     """
     Fine-tune mô hình SBERT trên các cặp câu Oracle với CosineSimilarityLoss.
     """
-    
     # 1. Load Pretrained SBERT Model
     base_model_name = MODEL_CONFIGS[lang]
     print(f"Nạp mô hình SBERT Gốc: {base_model_name}")

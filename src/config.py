@@ -1,6 +1,5 @@
 import os
 
-# Đường dẫn bộ các hình Pretrained và Fine-Tuned trên Hugging Face & Local
 MODEL_CONFIGS = {
     'en': 'sentence-transformers/all-mpnet-base-v2',
     'vi': 'bkai-foundation-models/vietnamese-bi-encoder',
@@ -8,7 +7,6 @@ MODEL_CONFIGS = {
     'finetuned_en': 'kttt294/english-sbert-finetuned'
 }
 
-# Các siêu tham số tối ưu (Thu được từ quá trình Grid Search Evaluation)
 OPTIMAL_HYPERPARAMS_VI = {
     'alpha': 0.10,        # Tỷ lệ chọn câu K% (Việt)
     'theta': 0.70,        # Ngưỡng Cosine Similarity để lọc trùng ngữ nghĩa (Việt)
@@ -31,9 +29,6 @@ OPTIMAL_HYPERPARAMS_EN = {
 OPTIMAL_HYPERPARAMS = OPTIMAL_HYPERPARAMS_VI.copy()
 
 def set_language_config(lang: str):
-    """
-    Tự động chuyển đổi bộ siêu tham số cho phù hợp với đặc thù phân phối của ngôn ngữ
-    """
     global OPTIMAL_HYPERPARAMS
     if lang == 'en':
         OPTIMAL_HYPERPARAMS.update(OPTIMAL_HYPERPARAMS_EN)
