@@ -141,7 +141,7 @@ def load_evaluation_dataset(lang: str = 'en', sample_count: int = 200, split: st
             raise RuntimeError(f"LỖI: Không thể nạp tập dữ liệu Tiếng Việt (VietNews) từ Hugging Face Hub.")
 
 
-def generate_oracle_extractive_pairs(articles_data: List[dict], max_pairs: int = 12000) -> List[InputExample]:
+def generate_oracle_extractive_pairs(articles_data: List[dict], max_pairs: int = 12000, lang: str = 'vi') -> List[InputExample]:
     """
     Tự động sinh các cặp câu Oracle (Câu bài báo <-> Câu tóm tắt chuẩn)
     dùng điểm ROUGE-1 làm nhãn (Pull nếu >0.45, Push nếu <0.10)
@@ -169,12 +169,23 @@ def generate_oracle_extractive_pairs(articles_data: List[dict], max_pairs: int =
         for a_sent in article_sents[:10]:  # Tập trung vào các câu mở đầu
             for s_sent in summary_sents:
                 score = float(scorer.score(s_sent, a_sent)['rouge1'].fmeasure)
+                # Tách từ nếu là tiếng Việt
+                a_sent_processed = a_sent
+                s_sent_processed = s_sent
+                if lang == 'vi':
+                    try:
+                        from underthesea import word_tokenize
+                        a_sent_processed = word_tokenize(a_sent, format="text")
+                        s_sent_processed = word_tokenize(s_sent, format="text")
+                    except ImportError:
+                        pass
+                
                 # Cặp PULL (label = 1.0) nếu độ tương đồng cao
                 if score > 0.45:
-                    training_examples.append(InputExample(texts=[a_sent, s_sent], label=1.0))
+                    training_examples.append(InputExample(texts=[a_sent_processed, s_sent_processed], label=1.0))
                 # Cặp PUSH (label = 0.0) nếu không có tương đồng
                 elif score < 0.10:
-                    training_examples.append(InputExample(texts=[a_sent, s_sent], label=0.0))
+                    training_examples.append(InputExample(texts=[a_sent_processed, s_sent_processed], label=0.0))
                 if len(training_examples) >= max_pairs:
                     break
 

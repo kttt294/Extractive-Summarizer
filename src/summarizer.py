@@ -14,7 +14,7 @@ def compute_k_adaptive(n_sentences: int, summary_length: str = 'medium', enable_
     if n_sentences <= 1:
         return 1, 1
 
-    alpha = OPTIMAL_HYPERPARAMS['alpha']  # 0.25 (Tỷ lệ nén tối ưu từ Grid Search)
+    alpha = OPTIMAL_HYPERPARAMS['alpha']  # 0.15 (Tỷ lệ nén tối ưu từ Grid Search)
     scales = {'brief': 0.6, 'medium': 1.0, 'detailed': 1.6}
     scale = scales.get(summary_length, 1.0)
 
@@ -78,7 +78,8 @@ def kmeans_cluster(sentences: List[Tuple[int, str]], embeddings: np.ndarray, k: 
 
         # Position-Aware Weighting: Kết hợp độ tương đồng tâm cụm và vị trí ưu tiên báo chí
         pos_weights = np.array([1.0 / np.sqrt(sent_tuple[0] + 1) for sent_tuple in cluster_sents])
-        combined_scores = sims + 0.35 * pos_weights
+        pos_lambda = OPTIMAL_HYPERPARAMS.get('lambda', 0.35)
+        combined_scores = sims + pos_lambda * pos_weights
         best_idx = int(np.argmax(combined_scores))
 
         selected_indices.append(cluster_sents[best_idx][0])
@@ -101,7 +102,7 @@ def filter_redundant(indices: List[int], sents: List[str], embs: List[np.ndarray
         is_redundant = False
         for j in keep_indices:
             sim = cosine_similarity([embs[i]], [embs[j]])[0][0]
-            if sim > threshold and len(keep_indices) >= target_sents:
+            if sim > threshold:
                 is_redundant = True
                 break
         if not is_redundant:

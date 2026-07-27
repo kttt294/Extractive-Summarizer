@@ -12,6 +12,7 @@ MODEL_CONFIGS = {
 OPTIMAL_HYPERPARAMS = {
     'alpha': 0.15,        # Tỷ lệ chọn câu K%
     'theta': 0.80,        # Ngưỡng Cosine Similarity để lọc trùng ngữ nghĩa (Post-filtering)
+    'lambda': 0.35,       # Trọng số ưu tiên vị trí câu đầu bài (Position-aware weighting)
     'min_words': 4,       # Số từ tối thiểu cho một câu hợp lệ (Giữ được tiêu đề & lọc cụm rác <4 từ)
     'max_words': 90,      # Số từ tối đa cho một câu hợp lệ (Bao quát được các câu báo chí phức hợp)
     'buffer_k': 2         # Số lượng cụm đệm cho K-Means để bù đắp sau khi lọc trùng

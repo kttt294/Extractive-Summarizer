@@ -28,7 +28,7 @@ def train_finetune_sbert(lang: str = 'vi', epochs: int = 3, batch_size: int = 32
         return
     # Tự động điều chỉnh số lượng cặp câu Oracle theo sample_data_count
     max_oracle_pairs = sample_data_count * 4
-    train_examples = generate_oracle_extractive_pairs(raw_articles, max_pairs=max_oracle_pairs)
+    train_examples = generate_oracle_extractive_pairs(raw_articles, max_pairs=max_oracle_pairs, lang=lang)
     if not train_examples:
         print("Không tạo được cặp câu huấn luyện. Bỏ qua fine-tuning.")
         return
