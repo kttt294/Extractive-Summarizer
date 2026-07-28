@@ -155,13 +155,18 @@ def generate_oracle_extractive_pairs(articles_data: List[dict], max_pairs: int =
             continue
 
         try:
-            article_sents = nltk.sent_tokenize(article)
-            summary_sents = nltk.sent_tokenize(highlights)
+            if lang == 'vi':
+                from underthesea import sent_tokenize as vi_sent_tokenize
+                article_sents = vi_sent_tokenize(article)
+                summary_sents = vi_sent_tokenize(highlights)
+            else:
+                article_sents = nltk.sent_tokenize(article)
+                summary_sents = nltk.sent_tokenize(highlights)
         except Exception:
             article_sents = [s.strip() for s in article.split('.') if len(s.strip()) > 10]
             summary_sents = [s.strip() for s in highlights.split('.') if len(s.strip()) > 10]
 
-        for a_sent in article_sents[:10]:  # Tập trung vào các câu mở đầu
+        for a_sent in article_sents:  # Duyệt toàn bộ câu để tránh Lead Bias
             for s_sent in summary_sents:
                 score = float(scorer.score(s_sent, a_sent)['rouge1'].fmeasure)
                 # Tách từ nếu là tiếng Việt

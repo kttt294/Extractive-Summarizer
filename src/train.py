@@ -11,7 +11,7 @@ datasets.logging.set_verbosity_error()
 logging.getLogger("datasets").setLevel(logging.ERROR)
 
 
-def train_finetune_sbert(lang: str = 'vi', epochs: int = 3, batch_size: int = 32, sample_data_count: int = 500):
+def train_finetune_sbert(lang: str = 'vi', epochs: int = 3, batch_size: int = 32, sample_data_count: int = 3000):
     """
     Fine-tune mô hình SBERT trên các cặp câu Oracle với CosineSimilarityLoss.
     """

@@ -35,13 +35,13 @@ def run_pipeline_with_hyperparams(text, lang, use_finetuned, alpha, theta, pos_l
 
     return " ".join(ordered_sents)
 
-def grid_search(lang='vi', sample_count=20, dataset_name=None):
+def grid_search(lang='vi', sample_count=500, dataset_name=None):
     if dataset_name:
         print(f"Bắt đầu tinh chỉnh siêu tham số trên tập dữ liệu ngoại lai: {dataset_name} với {sample_count} mẫu...")
-        samples = load_evaluation_dataset(lang=lang, sample_count=sample_count, split='test', custom_dataset=dataset_name)
+        samples = load_evaluation_dataset(lang=lang, sample_count=sample_count, split='validation', custom_dataset=dataset_name)
     else:
         print(f"Bắt đầu tinh chỉnh siêu tham số trên tập tin tức {lang.upper()} (VietNews/CNN) với {sample_count} mẫu...")
-        samples = load_evaluation_dataset(lang=lang, sample_count=sample_count, split='test')
+        samples = load_evaluation_dataset(lang=lang, sample_count=sample_count, split='validation')
     
     alphas = [0.05, 0.10, 0.15, 0.20, 0.25]
     thetas = [0.65, 0.70, 0.75, 0.80, 0.85]
@@ -89,4 +89,4 @@ def grid_search(lang='vi', sample_count=20, dataset_name=None):
     print(f"ROUGE-1 CAO NHẤT: {results[best_params]*100:.2f}%")
 
 if __name__ == "__main__":
-    grid_search(lang='vi', sample_count=20)
+    grid_search(lang='vi', sample_count=500)

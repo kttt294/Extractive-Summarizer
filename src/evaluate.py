@@ -129,15 +129,7 @@ def run_sbert_pipeline(text: str, lang: str = 'en', use_finetuned: bool = False)
     return summary_text, ordered_sents, sil_score, div_score
 
 
-import os
-import warnings
-import logging
 
-os.environ["TRANSFORMERS_VERBOSITY"] = "error"
-os.environ["TOKENIZERS_PARALLELISM"] = "false"
-warnings.filterwarnings("ignore")
-logging.getLogger("transformers").setLevel(logging.ERROR)
-logging.getLogger("sbert_score").setLevel(logging.ERROR)
 
 
 def compute_sbert_cosine_similarity(summary: str, reference: str, lang: str = 'en') -> float:

@@ -122,16 +122,17 @@ def evaluate_extra_framework(dataset_name, subset, text_col, summary_col, sample
             original_max = lang_dict.get('max_words', 90)
             
             # Khởi tạo không gian trung lập: Tắt thiên vị vị trí và Tắt bộ lọc độ dài
-            lang_dict['lambda'] = 0.0
-            lang_dict['min_words'] = 1
-            lang_dict['max_words'] = 9999
-            
-            ft_neu_summary, _, sil_ft_neu, div_ft_neu = run_sbert_pipeline(article, lang=lang, use_finetuned=True)
-            
-            # Trả lại tham số gốc cho hệ thống báo chí
-            lang_dict['lambda'] = original_lambda
-            lang_dict['min_words'] = original_min
-            lang_dict['max_words'] = original_max
+            try:
+                lang_dict['lambda'] = 0.0
+                lang_dict['min_words'] = 1
+                lang_dict['max_words'] = 9999
+                
+                ft_neu_summary, _, sil_ft_neu, div_ft_neu = run_sbert_pipeline(article, lang=lang, use_finetuned=True)
+            finally:
+                # Trả lại tham số gốc cho hệ thống báo chí dù có lỗi hay không
+                lang_dict['lambda'] = original_lambda
+                lang_dict['min_words'] = original_min
+                lang_dict['max_words'] = original_max
             
             s_ft_neu = scorer.score(reference, ft_neu_summary)
             results['FineTuned-Neutral-Lambda']['r1'].append(s_ft_neu['rouge1'].fmeasure)
@@ -141,7 +142,8 @@ def evaluate_extra_framework(dataset_name, subset, text_col, summary_col, sample
             results['FineTuned-Neutral-Lambda']['sil'].append(sil_ft_neu)
             results['FineTuned-Neutral-Lambda']['div'].append(div_ft_neu)
             results['FineTuned-Neutral-Lambda']['comp'].append((1.0 - len(ft_neu_summary.split()) / art_words) * 100)
-        except Exception:
+        except Exception as e:
+            print(f"Lỗi bài báo: {e}")
             continue
             
     non_clustering_models = {'Lead-3', 'TextRank', 'SBERT-No-KMeans'}
@@ -172,10 +174,12 @@ def evaluate_extra_framework(dataset_name, subset, text_col, summary_col, sample
 
     print(divider + "\n\n")
 
-def run_extra_evaluations(num_samples=2000):
+def run_extra_evaluations(num_samples=500):
     print(f"\nĐánh giá trên ngôn ngữ EN - Số lượng: {num_samples}\n")
     evaluate_extra_framework("ccdv/pubmed-summarization", "document", "article", "abstract", num_samples, lang='en', split='test')
+    # Lưu ý: Tập dany0407/reddit_tifu_long không có tập 'test' nên lấy mẫu từ 'train'
+    # Vì hệ thống không train trên bộ dữ liệu này (chỉ train trên VietNews), nên việc dùng 'train' để test là hợp lệ và không bị rò rỉ dữ liệu
     evaluate_extra_framework("dany0407/reddit_tifu_long", "", "documents", "tldr", num_samples, lang='en', split='train')
 
 if __name__ == '__main__':
-    run_extra_evaluations(2000)
+    run_extra_evaluations(500)

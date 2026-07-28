@@ -78,7 +78,7 @@ def kmeans_cluster(sentences: List[Tuple[int, str]], embeddings: np.ndarray, k: 
 
         # Position-Aware Weighting: Kết hợp độ tương đồng tâm cụm và vị trí ưu tiên báo chí
         pos_weights = np.array([1.0 / np.sqrt(sent_tuple[0] + 1) for sent_tuple in cluster_sents])
-        pos_lambda = OPTIMAL_HYPERPARAMS.get('lambda', 0.35)
+        pos_lambda = OPTIMAL_HYPERPARAMS.get('lambda', 0.20)
         combined_scores = sims + pos_lambda * pos_weights
         best_idx = int(np.argmax(combined_scores))
 
