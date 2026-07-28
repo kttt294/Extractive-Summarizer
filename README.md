@@ -1,7 +1,7 @@
-# Extractive Summarizer AI: SBERT Fine-Tuned + K-Means
+# Hệ thống Tóm tắt Văn bản Đa lĩnh vực (Extractive Summarization AI)
 
 **Google Colab Notebook:** [Mở Notebook trên Google Colab](https://colab.research.google.com/drive/14iD04cJHhBXVnu0TbT0VpqFLl7q99phr#scrollTo=ucwl7O1BWVPT)
-**Link Website**: https://syssummarizers.tech/
+**Link Website:** [https://syssummarizers.tech/](https://syssummarizers.tech/)
 
 Mô hình tóm tắt văn bản trích xuất (Extractive Summarization) song ngữ Anh - Việt ứng dụng **Sentence-BERT Fine-Tuned**, **K-Means Clustering**, **Dynamic Adaptive K**, **Post-filtering (Lọc trùng Cosine)** và **Khung Đánh giá Kép (Intrinsic & Extrinsic Metrics)**.
 
@@ -10,10 +10,10 @@ Mô hình tóm tắt văn bản trích xuất (Extractive Summarization) song ng
 ## Tính năng Chính
 
 1. **Khung Đánh giá Kép (Dual-Evaluation Framework):**
-   - **Nội tại (Intrinsic Metrics):** Silhouette Score (độ phân tách cụm K-Means), Diversity Score (độ đa dạng ngữ nghĩa trên Không gian Tham chiếu Vector Trung tính).
-   - **Ngoại tại (Extrinsic Metrics):** ROUGE-1, ROUGE-2, ROUGE-L, BERTScore F1, Compression Ratio (Tỷ lệ nén dung lượng rác).
+   - **Nội tại (Intrinsic Metrics):** Silhouette Score (độ sắc nét phân cụm K-Means), Diversity Score (khả năng chống lặp ý), Compression Ratio (tỷ lệ nén độ dài văn bản).
+   - **Ngoại tại (Extrinsic Metrics):** ROUGE-1, ROUGE-2, ROUGE-L (độ phủ từ vựng), BERTScore F1 và SBERT Cosine (độ tương đồng ngữ nghĩa so với nhãn chuẩn).
 2. **Fine-Tuning SBERT & Thuật toán Dynamic Adaptive K:**
-   - Tối ưu hóa mô hình SBERT với hàm mất mát `CosineSimilarityLoss` / `MultipleNegativesRankingLoss`.
+   - Tối ưu hóa mô hình SBERT với hàm mất mát `CosineSimilarityLoss`.
    - Tính toán số cụm $K$ và số câu mục tiêu thích ứng toán học hoàn toàn $K = \text{round}(N \times \alpha \times \text{scale})$ theo 3 chế độ độ dài (Ngắn gọn, Tiêu chuẩn, Chi tiết).
 3. **Sản phẩm Web App Full-Stack (FastAPI + React + TailwindCSS):**
    - Tự động nhận diện ngôn ngữ bài viết (`langdetect`).
