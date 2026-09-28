@@ -9,17 +9,10 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Configure CORS Middleware to allow React Frontend requests
+# Configure CORS Middleware to allow requests
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://syssummarizers.tech",
-        "https://syssummarizers.tech",
-        "http://www.syssummarizers.tech",
-        "https://www.syssummarizers.tech",
-        "http://localhost",
-        "http://localhost:5173",
-    ],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -31,21 +24,36 @@ app.include_router(summarize.router)
 
 @app.on_event("startup")
 def startup_event():
-    print("Pre-warming SBERT model into RAM...")
+    print("Pre-warming SBERT Embedding Engine...")
     try:
-        from src.embedding import get_sbert_model
-        get_sbert_model('vi', use_finetuned=True)
-        print("SBERT model pre-warmed into RAM successfully!")
+        from src.embedding import embed_sentences
+        embed_sentences([(0, "Khởi động hệ thống tóm tắt.")], lang='vi')
+        print("SBERT Engine ready!")
     except Exception as e:
-        print(f"Pre-warming model note: {e}")
+        print(f"Pre-warming note: {e}")
 
-@app.get("/")
-def root():
+@app.get("/api")
+def api_root():
     return {
         "message": "Extractive Summarizer API",
         "docs_url": "/docs",
         "health_check": "/api/v1/health"
     }
+
+# Mount Frontend static build if exists (for all-in-one deployment)
+import os
+from fastapi.staticfiles import StaticFiles
+frontend_dist = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "frontend", "dist")
+if os.path.exists(frontend_dist):
+    app.mount("/", StaticFiles(directory=frontend_dist, html=True), name="frontend")
+else:
+    @app.get("/")
+    def root():
+        return {
+            "message": "Extractive Summarizer API",
+            "docs_url": "/docs",
+            "health_check": "/api/v1/health"
+        }
 
 if __name__ == "__main__":
     uvicorn.run("backend.main:app", host="0.0.0.0", port=8000, reload=True)

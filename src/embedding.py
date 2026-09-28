@@ -33,11 +33,16 @@ def get_sbert_model(lang: str = 'vi', use_finetuned: bool = False) -> SentenceTr
     return model
 
 
+HF_API_MODEL = os.getenv("HF_API_MODEL", "sentence-transformers/paraphrase-multilingual-mpnet-base-v2")
+HF_TOKEN = os.getenv("HF_TOKEN", "")
+
+
 def embed_sentences(sentences: List[Tuple[int, str]], lang: str = 'vi', use_finetuned: bool = False) -> np.ndarray:
     """
     Trích xuất vector nhúng SBERT cho danh sách các tuple (vị_trí_câu, câu_văn_bản)
-    Chuyển đổi các câu văn bản chữ viết thành Numpy Matrix đa chiều để phân cụm K-Means
-    Trả về: Numpy array kích thước (N, 768) hoặc (N, 384)
+    Ưu tiên gọi Serverless Inference API (Hugging Face) để tiết kiệm 100% RAM/GPU trên Cloud.
+    Tự động fallback về mô hình PyTorch cục bộ nếu không có mạng/API lỗi.
+    Trả về: Numpy array kích thước (N, 768) đã chuẩn hóa L2 (chuẩn = 1).
     """
     if not sentences:
         return np.array([])
@@ -48,6 +53,23 @@ def embed_sentences(sentences: List[Tuple[int, str]], lang: str = 'vi', use_fine
             texts = [word_tokenize(t, format="text") for t in texts]
         except ImportError:
             pass
+
+    # 1. Thử gọi qua Hugging Face Serverless API (Nhẹ, không tốn RAM, phù hợp Cloud Free)
+    if HF_TOKEN:
+        try:
+            from huggingface_hub import InferenceClient
+            client = InferenceClient(token=HF_TOKEN)
+            res = client.feature_extraction(texts, model=HF_API_MODEL)
+            embeddings = np.array(res)
+            # Chuẩn hóa L2 Norm để đảm bảo chuẩn = 1 cho Cosine Similarity & K-Means
+            norms = np.linalg.norm(embeddings, axis=1, keepdims=True)
+            embeddings = embeddings / np.maximum(norms, 1e-12)
+            return embeddings
+        except Exception as e:
+            print(f"HF Inference API lưu ý: {e}. Đang chuyển sang chạy mô hình nội bộ...")
+
+    # 2. Fallback: Tải và chạy mô hình cục bộ bằng PyTorch/SentenceTransformers
     model = get_sbert_model(lang=lang, use_finetuned=use_finetuned)
     embeddings = model.encode(texts, convert_to_numpy=True, show_progress_bar=False, normalize_embeddings=True)
     return embeddings
+
