@@ -10,17 +10,19 @@ Notebook NLP gốc vẫn giữ nguyên output để tham khảo; không cần m�
 
 1. Mở notebook từ repository: https://github.com/kttt294/Extractive-Summarizer
 2. Chọn GPU T4, chạy từ đầu đến cuối bằng Run all.
-3. Cell đầu tự clone/cập nhật mã; kết nối Google Drive khi Colab yêu cầu.
-4. Khi hoàn tất, lưu notebook có output. Bảng, hình và checkpoint nằm trong
-   `MyDrive/NLP_BTL_HocMayNangCao/advanced_ml_v1_vi`.
-5. Gửi lại notebook có output cùng `test_summary.csv`, `test_per_document.csv`,
-   `paired_bootstrap.csv` và `validation_experiments.csv` để kiểm tra và sửa báo cáo.
+3. Cell đầu tự clone/cập nhật mã; không cần kết nối Google Drive.
+4. Cell cuối nén toàn bộ kết quả và mô hình thành `advanced_ml_v1_vi_results.zip`
+   rồi tự tải về máy. Lưu thêm notebook có output.
+5. Gửi lại notebook có output và ZIP kết quả để kiểm tra và sửa báo cáo.
 
 Không cần tải lên hay giải nén gói mã nguồn. Cấu hình mặc định chạy nghiên cứu tiếng Việt.
 Nếu cần chạy thêm tiếng Anh, đổi `LANG = 'en'` và chạy lại.
 
-Nếu phiên Colab ngắt, chạy lại cùng cấu hình: các bước hoàn tất được đọc từ cache
-trên Drive. Fine-tuning đang dở sẽ chạy lại bước đó. Nếu đã đổi mã, phiên bản thư viện
+Kết quả lưu tại `outputs/advanced_ml/advanced_ml_v1_vi` trong thư mục repository
+của phiên Colab. ZIP chứa toàn bộ thư mục này, bao gồm mô hình và embedding.
+Tải file về trước khi kết thúc phiên; nếu runtime bị xóa thì dữ liệu chưa tải sẽ mất.
+Nếu chạy lại trong cùng runtime, các bước hoàn tất được đọc từ cache cục bộ.
+Fine-tuning đang dở sẽ chạy lại bước đó. Nếu đã đổi mã, phiên bản thư viện
 hoặc giao thức thực nghiệm, đặt `RUN_NAME` mới để tránh trộn kết quả cũ.
 Không lựa chọn lại siêu tham số theo điểm test.
 

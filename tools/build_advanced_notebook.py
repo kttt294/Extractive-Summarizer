@@ -63,19 +63,15 @@ md('''## 3. Cấu hình thực nghiệm
 
 Tiếng Việt là thực nghiệm chính: 3.000 bài train, 500 validation và 1.000 test.
 Notebook chạy lần lượt toàn bộ các bước với một cấu hình duy nhất.
-Kết quả và checkpoint được lưu trên Google Drive để giữ lại khi phiên Colab ngắt.
+Kết quả và checkpoint được lưu trong phiên Colab. Cell cuối đóng gói toàn bộ
+thành ZIP và tải về máy, không cần kết nối Google Drive.
 Có thể đổi `LANG = 'en'` để chạy thêm tiếng Anh.
 '''),
 code('''LANG = 'vi'
 RUN_NAME = 'advanced_ml_v1'
 if LANG not in ('vi', 'en'):
     raise ValueError('LANG phải là vi hoặc en.')
-if IN_COLAB:
-    from google.colab import drive
-    drive.mount('/content/drive')
-    OUTPUT_BASE = Path('/content/drive/MyDrive/NLP_BTL_HocMayNangCao')
-else:
-    OUTPUT_BASE = Path('outputs/advanced_ml').resolve()
+OUTPUT_BASE = Path('outputs/advanced_ml').resolve()
 RUN_DIR = OUTPUT_BASE / f'{RUN_NAME}_{LANG}'
 COUNTS = {'train': 3000, 'validation': 500, 'test': 1000}
 SEEDS = (42, 123, 2026)
@@ -189,22 +185,26 @@ display(Image(filename=str(RUN_DIR / 'figures/learning_curve.png')))
 display(Image(filename=str(RUN_DIR / 'figures/regularization_optimizer.png')))
 display(Image(filename=str(RUN_DIR / 'figures/mlp_convergence.png')))
 '''),
-md('''## 12. Lưu kết quả để cập nhật báo cáo
+md('''## 12. Đóng gói toàn bộ kết quả và tải về máy
 
-Các bảng CSV, hình, cấu hình và checkpoint đã được lưu trong thư mục kết quả
-trên Drive. Lưu notebook có output sau khi chạy xong và gửi lại cùng các bảng kết quả
-để cập nhật những phần cần thiết trong báo cáo cũ. Giữ nguyên font, cỡ chữ,
-văn phong và cách trình bày của báo cáo.
+Cell cuối nén toàn bộ thư mục kết quả, gồm bảng CSV, hình, cấu hình, dữ liệu,
+embedding và mô hình đã huấn luyện, thành một file ZIP rồi tải về máy.
+Lưu thêm notebook có output và gửi lại cùng file ZIP để cập nhật báo cáo.
+Tải xong trước khi kết thúc phiên Colab vì file chưa tải về có thể mất khi phiên bị xóa.
 '''),
 code('''from datetime import datetime, timezone
+import shutil
+
 save_json(RUN_DIR / 'execution_status.json', dict(
     finished_utc=datetime.now(timezone.utc).isoformat(),
     ready_for_report=(RUN_DIR / 'bertscore_metadata.json').exists()))
-print('Hoàn tất. Kết quả được lưu tại:', RUN_DIR)
-print('Các bảng cần gửi lại:')
-for name in ('test_summary.csv', 'test_per_document.csv', 'paired_bootstrap.csv',
-             'validation_experiments.csv'):
-    print(' -', RUN_DIR / name)
+result_zip = shutil.make_archive(
+    str(RUN_DIR.parent / f'{RUN_DIR.name}_results'), 'zip', root_dir=str(RUN_DIR))
+print('Đã đóng gói toàn bộ kết quả:', result_zip)
+print(f'Dung lượng: {Path(result_zip).stat().st_size / (1024 ** 2):.1f} MB')
+if IN_COLAB:
+    from google.colab import files
+    files.download(result_zip)
 '''),
 ]
 

@@ -143,7 +143,7 @@ def test_notebook_is_one_sequential_workflow_with_github_setup():
     new = json.loads((root/'AdvancedML_ExtractiveSummarizer.ipynb').read_text(encoding='utf-8'))
     source = '\n'.join(''.join(c['source']) for c in new['cells'])
     assert 'https://github.com/kttt294/Extractive-Summarizer.git' in source
-    for obsolete in ('RUN_LEGACY', 'smoke', 'files.upload', 'zipfile', 'Phụ lục'):
+    for obsolete in ('RUN_LEGACY', 'smoke', 'files.upload', 'drive.mount', '/content/drive', 'Phụ lục'):
         assert obsolete not in source
     for cell in new['cells']:
         if cell['cell_type'] == 'code':
@@ -153,3 +153,6 @@ def test_notebook_is_one_sequential_workflow_with_github_setup():
         'prepare_corpus', 'finetune_encoder', 'cache_embeddings',
         'run_training', 'run_test', 'add_bertscore', 'make_plots')]
     assert stages == sorted(stages)
+    final_cell = ''.join(new['cells'][-1]['source'])
+    assert 'shutil.make_archive(' in final_cell
+    assert 'files.download(result_zip)' in final_cell
