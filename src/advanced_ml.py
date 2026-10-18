@@ -154,13 +154,14 @@ def finetune_encoder(corpus, root, base_model, epochs=3, batch_size=32,
     Mỗi bài lấy tối đa 8 cặp trải đều theo điểm để tránh vài bài chiếm hết dữ liệu.
     """
     # Trainer có thể tự bật W&B nếu Colab cài sẵn; chỉ lưu log cục bộ.
-    os.environ['WANDB_DISABLED'] = 'true'
     os.environ['WANDB_MODE'] = 'disabled'
     import torch
     from huggingface_hub import HfApi
-    from sentence_transformers import InputExample, SentenceTransformer, losses
+    from sentence_transformers import (InputExample, SentenceTransformer, losses,
+                                       SentenceTransformerTrainer, SentenceTransformerTrainingArguments)
     from sentence_transformers.evaluation import EmbeddingSimilarityEvaluator
-    from torch.utils.data import DataLoader
+    from datasets import Dataset
+    from transformers import TrainerCallback
 
     random.seed(seed)
     np.random.seed(seed)
@@ -171,7 +172,8 @@ def finetune_encoder(corpus, root, base_model, epochs=3, batch_size=32,
     path = root / 'encoder_finetuned'
     settings = dict(corpus=corpus['digest'], base_model=base_model, epochs=epochs,
                     batch_size=batch_size, learning_rate=learning_rate,
-                    weight_decay=weight_decay, seed=seed, pair_policy='rouge1-quantiles-8-per-doc')
+                    weight_decay=weight_decay, seed=seed, pair_policy='rouge1-quantiles-8-per-doc',
+                    training_protocol='trainer-loss-curves-v2')
     manifest = root / 'finetune_manifest.json'
     if manifest.exists():
         saved = json.loads(manifest.read_text(encoding='utf-8'))
@@ -203,29 +205,96 @@ def finetune_encoder(corpus, root, base_model, epochs=3, batch_size=32,
     revision = HfApi().model_info(base_model).sha
     model = SentenceTransformer(base_model, revision=revision)
     evaluator = EmbeddingSimilarityEvaluator.from_input_examples(validation, name='validation', write_csv=True)
-    evaluation_history = []
+    def as_dataset(examples):
+        return Dataset.from_dict(dict(sentence1=[x.texts[0] for x in examples],
+                                      sentence2=[x.texts[1] for x in examples],
+                                      score=[float(x.label) for x in examples]))
 
-    def record_evaluation(score, epoch, steps):
-        evaluation_history.append(dict(epoch=int(epoch), steps=int(steps), score=float(score)))
-        save_json(root/'finetune_validation_history.json', evaluation_history)
+    history = []
 
+    class LossCallback(TrainerCallback):
+        def on_log(self, args, state, control, logs=None, **kwargs):
+            append_sbert_log(root, history, state.global_step, state.epoch, logs or {})
+
+    steps_per_epoch = max(1, (len(train) + batch_size - 1) // batch_size)
+    eval_steps = max(1, steps_per_epoch // 4)
+    args = SentenceTransformerTrainingArguments(
+        output_dir=str(root/'finetune_checkpoints'), num_train_epochs=epochs,
+        per_device_train_batch_size=batch_size, per_device_eval_batch_size=batch_size,
+        learning_rate=learning_rate, weight_decay=weight_decay, warmup_ratio=0.1,
+        optim='adamw_torch', seed=seed, data_seed=seed,
+        logging_strategy='steps', logging_steps=min(50, eval_steps), logging_first_step=True,
+        eval_strategy='steps', eval_steps=eval_steps,
+        save_strategy='steps', save_steps=eval_steps, save_total_limit=1,
+        load_best_model_at_end=True, metric_for_best_model='eval_loss', greater_is_better=False,
+        report_to='none', fp16=False, bf16=False)
+    trainer = SentenceTransformerTrainer(
+        model=model, args=args, train_dataset=as_dataset(train), eval_dataset=as_dataset(validation),
+        loss=losses.CosineSimilarityLoss(model), evaluator=evaluator, callbacks=[LossCallback()])
     started = time.perf_counter()
-    model.fit(train_objectives=[(DataLoader(train, batch_size=batch_size, shuffle=True),
-                                 losses.CosineSimilarityLoss(model))],
-              evaluator=evaluator, epochs=epochs,
-              evaluation_steps=max(1, len(train) // batch_size),
-              warmup_steps=max(1, int(len(train) / batch_size * epochs * 0.1)),
-              optimizer_params={'lr': learning_rate}, weight_decay=weight_decay,
-              output_path=str(path), save_best_model=True, show_progress_bar=True,
-              callback=record_evaluation)
+    trainer.evaluate()  # Mốc validation trước khi cập nhật trọng số, tại step 0.
+    trainer.train()
+    # Đây là checkpoint đã được Trainer khôi phục theo validation MSE thấp nhất.
+    model.save(str(path))
+    save_json(root/'finetune_trainer_history.json', trainer.state.log_history)
+    plot_sbert_loss(root)
     save_json(manifest, dict(settings=settings, base_revision=revision,
                             train_pairs=len(train), validation_pairs=len(validation),
                             seconds=time.perf_counter()-started,
-                            selection='validation embedding similarity, not summarization ROUGE'))
-    del model
+                            selection='minimum validation cosine MSE; not test or summarization ROUGE',
+                            best_validation_loss=float(trainer.state.best_metric),
+                            best_checkpoint=trainer.state.best_model_checkpoint,
+                            eval_steps=eval_steps, logging_steps=min(50, eval_steps)))
+    del trainer, model
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
     return str(path.resolve())
+
+
+def append_sbert_log(root, history, step, epoch, logs):
+    """Lưu điểm đo thật; không nội suy loss giữa các lần đánh giá."""
+    if not any(key in logs for key in ('loss', 'eval_loss')):
+        return
+    def number(value):
+        return float(value) if value is not None and np.isfinite(float(value)) else None
+    history.append(dict(step=int(step), epoch=number(epoch),
+                        train_loss=number(logs.get('loss')),
+                        validation_loss=number(logs.get('eval_loss')),
+                        learning_rate=number(logs.get('learning_rate')),
+                        grad_norm=number(logs.get('grad_norm'))))
+    write_csv(Path(root)/'finetune_loss_history.csv', history)
+    save_json(Path(root)/'finetune_loss_history.json', history)
+
+
+def plot_sbert_loss(root):
+    """Train: loss trung bình cửa sổ minibatch; validation: MSE toàn bộ cặp held-out."""
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+    root = Path(root)
+    history = json.loads((root/'finetune_loss_history.json').read_text(encoding='utf-8'))
+    train = [row for row in history if row['train_loss'] is not None]
+    validation = [row for row in history if row['validation_loss'] is not None]
+    if not train or not validation:
+        raise ValueError('Cần có cả training loss và validation loss để vẽ SBERT.')
+    folder = root/'figures'
+    folder.mkdir(parents=True, exist_ok=True)
+    fig, ax = plt.subplots(figsize=(9, 5))
+    ax.plot([r['step'] for r in train], [r['train_loss'] for r in train],
+            label='Training MSE (minibatch window mean)', alpha=0.8)
+    ax.plot([r['step'] for r in validation], [r['validation_loss'] for r in validation],
+            marker='o', label='Validation MSE (held-out pairs)')
+    best = min((r for r in validation if r['step'] > 0), key=lambda r: r['validation_loss'], default=None)
+    if best:
+        ax.axvline(best['step'], color='gray', linestyle='--',
+                   label=f"Lowest measured validation MSE: step {best['step']}")
+    ax.set(xlabel='Optimizer step', ylabel='Cosine similarity MSE loss', title='SBERT fine-tuning loss')
+    ax.legend()
+    ax.grid(alpha=0.2)
+    fig.tight_layout()
+    fig.savefig(folder/'sbert_loss_curve.png', dpi=200)
+    plt.close(fig)
+    return folder/'sbert_loss_curve.png'
 
 
 def encoder_text(text, lang):

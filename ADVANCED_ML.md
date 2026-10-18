@@ -11,14 +11,14 @@ Notebook NLP gốc vẫn giữ nguyên output để tham khảo; không cần m�
 1. Mở notebook từ repository: https://github.com/kttt294/Extractive-Summarizer
 2. Chọn GPU T4, chạy từ đầu đến cuối bằng Run all.
 3. Cell đầu tự clone/cập nhật mã; không cần kết nối Google Drive.
-4. Cell cuối nén toàn bộ kết quả và mô hình thành `advanced_ml_v1_vi_results.zip`
+4. Cell cuối nén toàn bộ kết quả và mô hình thành `advanced_ml_v2_vi_results.zip`
    rồi tự tải về máy. Lưu thêm notebook có output.
 5. Gửi lại notebook có output và ZIP kết quả để kiểm tra và sửa báo cáo.
 
 Không cần tải lên hay giải nén gói mã nguồn. Cấu hình mặc định chạy nghiên cứu tiếng Việt.
 Nếu cần chạy thêm tiếng Anh, đổi `LANG = 'en'` và chạy lại.
 
-Kết quả lưu tại `outputs/advanced_ml/advanced_ml_v1_vi` trong thư mục repository
+Kết quả lưu tại `outputs/advanced_ml/advanced_ml_v2_vi` trong thư mục repository
 của phiên Colab. ZIP chứa toàn bộ thư mục này, bao gồm mô hình và embedding.
 Tải file về trước khi kết thúc phiên; nếu runtime bị xóa thì dữ liệu chưa tải sẽ mất.
 Nếu chạy lại trong cùng runtime, các bước hoàn tất được đọc từ cache cục bộ.
@@ -32,7 +32,10 @@ Không lựa chọn lại siêu tham số theo điểm test.
 - Kiểm tra và loại trùng chính xác sau chuẩn hóa, chưa kiểm tra gần trùng.
 - Cùng câu ứng viên và ngân sách 3 câu cho tất cả phương pháp. Báo cáo thêm độ dài
   từ vì cùng số câu chưa đồng nghĩa cùng số từ.
-- Fine-tune encoder từ train mới, checkpoint chọn bằng validation similarity.
+- Fine-tune encoder từ train mới, checkpoint chọn bằng validation MSE thấp nhất.
+  Training loss ghi tối đa mỗi 50 bước; validation MSE khoảng bốn lần mỗi epoch,
+  có thêm mốc trước train. Lưu CSV/JSON và hiển thị `figures/sbert_loss_curve.png`
+  ngay sau fine-tuning. Đọc phần hướng dẫn phân tích dưới hình trong notebook.
 - So sánh pretrained/fine-tuned với centroid/K-Means thuần, không thêm heuristic
   sản phẩm chỉ ở một phía. Fine-tuning một seed; seed K-Means không thay thế seed
   fine-tuning. Chưa có kết quả ngoài miền trong giao thức chính mới.

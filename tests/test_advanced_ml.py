@@ -15,7 +15,7 @@ from threadpoolctl import threadpool_limits
 from src.advanced_ml import (
     PROTOCOL, add_bertscore, article_hash, features, fit_head, make_plots,
     oracle_indices, paired_bootstrap, predict_head, run_test, run_training,
-    save_json, select_top,
+    save_json, select_top, append_sbert_log, plot_sbert_loss,
 )
 from src.metrics import VietnameseTokenizer, make_rouge_scorer
 
@@ -62,6 +62,24 @@ def test_bootstrap_direction_and_invalid_pairs():
     assert paired_bootstrap([1], [1], repetitions=10)['ci_high'] == 0
     with pytest.raises(ValueError):
         paired_bootstrap([1, 2], [1])
+
+
+def test_sbert_loss_history_keeps_train_and_validation_measurements_separate(tmp_path):
+    history = []
+    append_sbert_log(tmp_path, history, 0, 0, {'eval_loss': 0.4})
+    append_sbert_log(tmp_path, history, 1, 0.01, {'loss': 0.5, 'learning_rate': 0.00001})
+    append_sbert_log(tmp_path, history, 50, 0.5, {'loss': 0.2})
+    append_sbert_log(tmp_path, history, 50, 0.5, {'eval_loss': 0.25})
+    append_sbert_log(tmp_path, history, 100, 1, {'loss': 0.1})
+    append_sbert_log(tmp_path, history, 100, 1, {'eval_loss': 0.3})
+    append_sbert_log(tmp_path, history, 100, 1, {'train_runtime': 10})
+    assert len(history) == 6
+    assert history[0]['train_loss'] is None
+    assert history[1]['validation_loss'] is None
+    assert history[3]['validation_loss'] == 0.25
+    stored = json.loads((tmp_path/'finetune_loss_history.json').read_text(encoding='utf-8'))
+    assert stored == history
+    assert plot_sbert_loss(tmp_path).stat().st_size > 1000
 
 
 def synthetic_corpus():

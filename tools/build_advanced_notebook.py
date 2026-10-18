@@ -68,7 +68,7 @@ thành ZIP và tải về máy, không cần kết nối Google Drive.
 Có thể đổi `LANG = 'en'` để chạy thêm tiếng Anh.
 '''),
 code('''LANG = 'vi'
-RUN_NAME = 'advanced_ml_v1'
+RUN_NAME = 'advanced_ml_v2'
 if LANG not in ('vi', 'en'):
     raise ValueError('LANG phải là vi hoặc en.')
 OUTPUT_BASE = Path('outputs/advanced_ml').resolve()
@@ -116,13 +116,39 @@ và câu tham chiếu phù hợp nhất. Đây là weak supervision, không ph�
 CosineSimilarityLoss tối thiểu hóa sai số bình phương giữa cosine embedding và nhãn.
 Dùng learning rate 2e-5, weight decay 0,01, warmup 10%, 3 epoch.
 Các giá trị là thiết lập thực nghiệm, không khẳng định tối ưu sẵn.
-Checkpoint được chọn bằng độ tương quan trên các cặp validation; khác với lựa chọn
-bộ phân loại câu bằng ROUGE-L ở phần sau. Chỉ fine-tune encoder một seed;
+Checkpoint được chọn bằng validation MSE thấp nhất sau các bước cập nhật;
+khác với lựa chọn bộ phân loại câu bằng ROUGE-L ở phần sau. Chỉ fine-tune encoder một seed;
 độ lệch chuẩn các seed sau đó không đo bất định của quá trình fine-tuning này.
 '''),
 code('''finetuned_path = finetune_encoder(corpus, RUN_DIR, BASE_MODEL,
     epochs=FT_EPOCHS, batch_size=32, learning_rate=2e-5, weight_decay=0.01, seed=42)
 print('Checkpoint mới:', finetuned_path)
+from IPython.display import display, Image
+display(Image(filename=str(RUN_DIR / 'figures/sbert_loss_curve.png')))
+'''),
+md('''### Phân tích loss curve của SBERT
+
+Trục ngang là số bước cập nhật trọng số; trục dọc là MSE giữa cosine embedding
+và nhãn ROUGE-1 của cặp câu. Training loss được ghi ở bước đầu và tối đa mỗi 50 bước,
+là trung bình loss minibatch từ lần ghi trước. Validation loss đo trên toàn bộ
+các cặp validation, khoảng bốn lần mỗi epoch và có mốc ban đầu ở step 0.
+Các chấm validation là điểm đo thật; đoạn nối chỉ giúp quan sát xu hướng.
+
+- Cả hai loss giảm rồi chững: dấu hiệu hội tụ của hàm mục tiêu trên dữ liệu này.
+- Train tiếp tục giảm nhưng validation tăng kéo dài: dấu hiệu có thể overfit;
+  phân tích nhiều điểm liên tiếp, không kết luận từ một dao động đơn lẻ.
+- Hai đường cùng cao và ít giảm: cần xem thêm learning rate, lượng dữ liệu,
+  nhãn yếu và năng lực mô hình; chưa đủ bằng chứng để khẳng định một nguyên nhân.
+- Train và validation không hoàn toàn cùng điều kiện đo: train có dropout và trọng số
+  thay đổi trong cửa sổ ghi log; validation ở chế độ eval. Vì vậy validation thấp hơn
+  train không tự động là lỗi. Loss này cũng khác cross-entropy của MLP.
+
+Đường dọc đánh dấu validation loss thấp nhất sau khi bắt đầu train. Mốc step 0 giúp
+kiểm tra fine-tuning có tốt hơn ban đầu trên hàm loss hay không; không tham gia chọn
+checkpoint. Nếu mọi điểm sau train đều kém step 0, cần nêu rõ thay vì khẳng định cải thiện.
+Loss giảm không bảo đảm ROUGE/BERTScore của bản tóm tắt tăng: phải đối chiếu bảng test.
+Số liệu gốc lưu trong `finetune_loss_history.csv` và `.json`, hình trong
+`figures/sbert_loss_curve.png`; tất cả có trong ZIP cuối notebook.
 '''),
 code('''# 7. Embedding của cùng các bài, hai encoder; không dùng API và không fallback mô hình.
 pretrained_embeddings = cache_embeddings(corpus, RUN_DIR, BASE_MODEL, tag='pretrained')
