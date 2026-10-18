@@ -10,6 +10,7 @@ import csv
 import hashlib
 import importlib.metadata
 import json
+import os
 import platform
 import random
 import time
@@ -152,6 +153,9 @@ def finetune_encoder(corpus, root, base_model, epochs=3, batch_size=32,
     Nhãn cặp là ROUGE-1 liên tục giữa câu nguồn và câu tham chiếu.
     Mỗi bài lấy tối đa 8 cặp trải đều theo điểm để tránh vài bài chiếm hết dữ liệu.
     """
+    # Trainer có thể tự bật W&B nếu Colab cài sẵn; chỉ lưu log cục bộ.
+    os.environ['WANDB_DISABLED'] = 'true'
+    os.environ['WANDB_MODE'] = 'disabled'
     import torch
     from huggingface_hub import HfApi
     from sentence_transformers import InputExample, SentenceTransformer, losses
