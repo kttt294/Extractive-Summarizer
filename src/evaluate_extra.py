@@ -6,6 +6,7 @@ import numpy as np
 from datasets import load_dataset
 from tqdm import tqdm
 from rouge_score import rouge_scorer
+from src.metrics import make_rouge_scorer
 
 os.environ["TRANSFORMERS_VERBOSITY"] = "error"
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
@@ -27,13 +28,13 @@ def evaluate_extra_framework(dataset_name, subset, text_col, summary_col, sample
     print(f"\nĐánh giá trên tập dữ liệu {dataset_name} ({subset}) - Số lượng: {sample_count}\n")
     
     if subset:
-        ds = load_dataset(dataset_name, subset, split=split, trust_remote_code=True)
+        ds = load_dataset(dataset_name, subset, split=split)
     else:
-        ds = load_dataset(dataset_name, split=split, trust_remote_code=True)
+        ds = load_dataset(dataset_name, split=split)
     
     ds = ds.select(range(min(sample_count, len(ds))))
     
-    scorer = rouge_scorer.RougeScorer(['rouge1', 'rouge2', 'rougeL'], use_stemmer=True)
+    scorer = make_rouge_scorer(lang)
     models_to_test = ['Lead-3', 'TextRank', 'Pretrained-SBERT-KMeans', 'SBERT-No-KMeans', 'FineTuned-SBERT-KMeans', 'FineTuned-Neutral-Lambda']
     results = {m: {'r1': [], 'r2': [], 'rl': [], 'sbert_cosine': [], 'sil': [], 'div': [], 'comp': []} for m in models_to_test}
     

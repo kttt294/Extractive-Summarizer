@@ -26,6 +26,7 @@ from src.preprocess import preprocess_text
 from src.embedding import embed_sentences
 from src.summarizer import compute_k_adaptive, kmeans_cluster, filter_redundant, reorder_by_original, diversity_score
 from src.dataset import load_evaluation_dataset
+from src.metrics import make_rouge_scorer
 
 
 def run_lead3_baseline(sentences: List[tuple]) -> List[str]:
@@ -134,7 +135,7 @@ def run_sbert_pipeline(text: str, lang: str = 'en', use_finetuned: bool = False)
 
 def compute_sbert_cosine_similarity(summary: str, reference: str, lang: str = 'en') -> float:
     """
-    Tính điểm BERTScore / Semantic Similarity F1 thông qua Vector SBERT/BERT.
+    Tính cosine giữa hai vector SBERT (khác với BERTScore F1).
     Đo tương đồng ngữ nghĩa cấp độ vector giữa bản tóm tắt máy và bản tóm tắt chuẩn.
     """
     if not summary or not reference:
@@ -178,7 +179,7 @@ def evaluate_framework(lang: str = 'en', sample_count: int = 2000):
         print("Không tìm thấy dữ liệu thử nghiệm.")
         return
 
-    scorer = rouge_scorer.RougeScorer(['rouge1', 'rouge2', 'rougeL'], use_stemmer=True)
+    scorer = make_rouge_scorer(lang)
 
     models_to_test = ['Lead-3', 'TextRank', 'Pretrained-SBERT-KMeans', 'SBERT-No-KMeans', 'FineTuned-SBERT-KMeans']
     results = {m: {'r1': [], 'r2': [], 'rl': [], 'sbert_cosine': [], 'real_bertscore': [], 'sil': [], 'div': [], 'comp': []} for m in models_to_test}

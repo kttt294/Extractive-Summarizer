@@ -11,6 +11,7 @@ warnings.filterwarnings("ignore")
 logging.getLogger("transformers").setLevel(logging.ERROR)
 
 from src.dataset import load_evaluation_dataset
+from src.metrics import make_rouge_scorer
 from src.preprocess import preprocess_text
 from src.embedding import embed_sentences
 import src.config as config
@@ -47,7 +48,7 @@ def grid_search(lang='vi', sample_count=500, dataset_name=None):
     thetas = [0.65, 0.70, 0.75, 0.80, 0.85]
     lambdas = [0.20, 0.35, 0.50]
     
-    scorer = rouge_scorer.RougeScorer(['rouge1'], use_stemmer=True)
+    scorer = make_rouge_scorer(lang, ('rouge1',))
     
     results = {}
     

@@ -6,6 +6,7 @@ from typing import List, Tuple
 from datasets import load_dataset
 from rouge_score import rouge_scorer
 from sentence_transformers import InputExample
+from src.metrics import make_rouge_scorer
 warnings.filterwarnings("ignore")
 datasets.logging.set_verbosity_error()
 logging.getLogger("datasets").setLevel(logging.ERROR)
@@ -141,7 +142,7 @@ def generate_oracle_extractive_pairs(articles_data: List[dict], max_pairs: int =
     Tự động sinh các cặp câu Oracle (Câu bài báo <-> Câu tóm tắt chuẩn)
     dùng điểm ROUGE-1 làm nhãn (Pull nếu >0.45, Push nếu <0.10)
     """
-    scorer = rouge_scorer.RougeScorer(['rouge1'], use_stemmer=True)
+    scorer = make_rouge_scorer(lang, ('rouge1',))
     training_examples = []
 
     print(f"Đang tạo các cặp câu Oracle cho Fine-Tuning (mục tiêu: {max_pairs} cặp).")
@@ -167,6 +168,8 @@ def generate_oracle_extractive_pairs(articles_data: List[dict], max_pairs: int =
             summary_sents = [s.strip() for s in highlights.split('.') if len(s.strip()) > 10]
 
         for a_sent in article_sents:  # Duyệt toàn bộ câu để tránh Lead Bias
+            if len(training_examples) >= max_pairs:
+                break
             for s_sent in summary_sents:
                 score = float(scorer.score(s_sent, a_sent)['rouge1'].fmeasure)
                 # Tách từ nếu là tiếng Việt
