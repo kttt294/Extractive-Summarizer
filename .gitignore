@@ -7,12 +7,14 @@ env/
 venv/
 ENV/
 .pytest_cache/
+.playwright-cli/
 .coverage
 htmlcov/
 
 # Environment Variables & Secrets (Bảo mật API Keys & Credentials)
 .env
 .env.*
+!.env.example
 *.env
 
 # Models & Heavy Binary Outputs (Bỏ qua weights mô hình nặng, chỉ giữ .gitkeep)
@@ -52,3 +54,4 @@ Thumbs.db
 ~$*
 
 docs/
+advanced_ml*_results/

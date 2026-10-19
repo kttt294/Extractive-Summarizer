@@ -1,73 +1,53 @@
 import time
-import sys
-import os
-from typing import Dict, Any
-
-# Ensure src module is importable
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+from threading import Lock
 
 from src.preprocess import resolve_language, preprocess_text
-from src.embedding import embed_sentences
-from src.summarizer import compute_k_adaptive, kmeans_cluster, filter_redundant, reorder_by_original, diversity_score
+from src.summarizer import (compute_k_adaptive, kmeans_cluster, filter_redundant,
+                            reorder_by_original, diversity_score)
+from backend.services.advanced_predictor import get_predictor, source_spans
+
+_english_lock = Lock()
 
 
-def process_summarization(text: str, user_lang: str = 'auto', length: str = 'medium', use_finetuned: bool = True) -> Dict[str, Any]:
-    """
-    Service wrapper that integrates Preprocessing, SBERT Embedding, K-Means Clustering,
-    Post-filtering, Reordering, and Metrics Calculation.
-    """
-    start_time = time.time()
-
-    # 1. Resolve Language (Auto Detect)
+def process_summarization(text, user_lang='auto', length='medium', use_finetuned=True):
+    start = time.perf_counter()
     lang = resolve_language(text, user_choice=user_lang)
-
-    # 2. Sentence Tokenization & Preprocessing
-    sentences = preprocess_text(text, lang=lang)
-    if not sentences:
-        raise ValueError("Văn bản quá ngắn hoặc không chứa câu hợp lệ để tóm tắt.")
-
-    # Chiến lược Production: Bắt buộc dùng Fine-Tuned cho Tiếng Việt (do hiệu quả vượt trội),
-    # và dùng Pretrained cho Tiếng Anh (do hiện tượng bão hòa Ceiling Effect, tiết kiệm API calls/RAM).
     if lang == 'vi':
-        actual_use_finetuned = True
+        sentences, indices, embeddings = get_predictor().summarize(text)
+        summary = [sentences[i] for i in indices]
+        selected_embs = [embeddings[i] for i in indices]
+        silhouette = None
+        method, version = 'SBERT + Logistic Regression', 'advanced-ml-v2-logistic-seed42'
     else:
-        actual_use_finetuned = False
-
-    # 3. SBERT Sentence Embedding
-    embeddings = embed_sentences(sentences, lang=lang, use_finetuned=actual_use_finetuned)
-
-    # 4. Compute Adaptive K
-    kmeans_k, target_k = compute_k_adaptive(len(sentences), summary_length=length, enable_buffer=True)
-
-    # 5. K-Means Clustering & Intrinsic Metric (Silhouette Score)
-    indices, sents, embs, sil_score = kmeans_cluster(sentences, embeddings, kmeans_k)
-
-    # 6. Post-filtering (Semantic Deduplication) with dynamic target_sents
-    f_indices, f_sents, f_embs = filter_redundant(indices, sents, embs, target_sents=target_k)
-
-    # 7. Original Sequence Reordering
-    ordered_sents = reorder_by_original(f_indices, f_sents)
-
-    # 8. Diversity Score Calculation
-    div_score = diversity_score(f_embs)
-
-    latency_ms = round((time.time() - start_time) * 1000, 2)
-    original_count = len(sentences)
-    summary_count = len(ordered_sents)
-    compression_ratio = round((1.0 - (summary_count / max(1, original_count))) * 100, 1)
-
-    return {
-        'original_text': text,
-        'summary_text': " ".join(ordered_sents),
-        'summary_sentences': ordered_sents,
-        'highlight_indices': f_indices,
-        'stats': {
-            'original_sentence_count': original_count,
-            'summary_sentence_count': summary_count,
-            'compression_ratio': compression_ratio,
-            'latency_ms': latency_ms,
-            'silhouette_score': round(sil_score, 4),
-            'diversity_score': round(div_score, 4),
-            'detected_language': lang.upper()
-        }
-    }
+        # Tiếng Anh kế thừa, không tuyên bố có kết quả v2 trên tiếng Anh.
+        import src.config as config
+        from src.embedding import get_sbert_model
+        with _english_lock:
+            config.set_language_config('en')
+            pairs = preprocess_text(text, lang='en')
+            if not pairs:
+                raise ValueError('Văn bản không chứa câu hợp lệ để tóm tắt.')
+            encoder = get_sbert_model('en', use_finetuned=False, strict=True)
+            embeddings = encoder.encode([s for _, s in pairs], convert_to_numpy=True,
+                                        normalize_embeddings=True, show_progress_bar=False)
+            k, target = compute_k_adaptive(len(pairs), summary_length=length)
+            ids, sents, embs, silhouette = kmeans_cluster(pairs, embeddings, k)
+            ids, sents, selected_embs = filter_redundant(ids, sents, embs, target_sents=target)
+            indices = sorted(ids)
+            summary = reorder_by_original(ids, sents)
+            sentences = [s for _, s in pairs]
+        method, version = 'SBERT + K-Means', 'legacy-en'
+    diversity = diversity_score(selected_embs) if len(selected_embs) >= 2 else None
+    return dict(
+        original_text=text, original_sentence_spans=source_spans(text, sentences),
+        summary_text=' '.join(summary), summary_sentences=summary, highlight_indices=indices,
+        stats=dict(original_sentence_count=len(sentences), summary_sentence_count=len(summary),
+                   compression_ratio=round((1-len(summary)/len(sentences))*100, 1),
+                   latency_ms=round((time.perf_counter()-start)*1000, 2),
+                   silhouette_score=round(silhouette, 4) if silhouette is not None else None,
+                   diversity_score=diversity, detected_language=lang.upper(),
+                   method=method, model_version=version,
+                   summary_policy='fixed-3' if lang == 'vi' else 'adaptive',
+                   note=('Tiếng Việt: chọn tối đa 3 câu theo cấu hình thực nghiệm. '
+                         'Văn bản ít hơn 3 câu hợp lệ sẽ giữ các câu hiện có.' if lang == 'vi'
+                         else 'Tiếng Anh dùng phương pháp SBERT + K-Means kế thừa.')))

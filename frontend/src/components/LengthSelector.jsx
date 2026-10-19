@@ -1,6 +1,17 @@
 import React from 'react';
 
-export default function LengthSelector({ length, setLength }) {
+export default function LengthSelector({ length, setLength, langChoice }) {
+  if (langChoice !== 'en') {
+    return (
+      <div className="space-y-2 mt-4 rounded-xl border border-brand-100 bg-brand-50 p-3">
+        <p className="text-sm font-semibold text-brand-700">Tóm tắt tiếng Việt: 3 câu</p>
+        <p className="text-xs text-gray-600 leading-relaxed">
+          Chọn ba câu quan trọng và giữ thứ tự trong bài gốc. Văn bản ngắn sẽ giữ tối đa số câu hiện có.
+          {langChoice === 'auto' && ' Với tiếng Anh, hệ thống dùng độ dài tiêu chuẩn.'}
+        </p>
+      </div>
+    );
+  }
   const options = [
     { id: 'brief', label: 'Ngắn gọn' },
     { id: 'medium', label: 'Tiêu chuẩn' },

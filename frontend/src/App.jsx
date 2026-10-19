@@ -38,17 +38,17 @@ export default function App() {
         if (!text || text.trim().length < 50) {
           throw new Error('Vui lòng nhập đoạn văn bản dài tối thiểu 50 ký tự.');
         }
-        data = await summarizeTextApi(text, langChoice, length);
+        data = await summarizeTextApi(text, langChoice, langChoice === 'en' ? length : 'medium');
       } else if (activeTab === 'url') {
         if (!url || !url.startsWith('http')) {
           throw new Error('Vui lòng nhập đường link bài báo hợp lệ (bắt đầu bằng http:// hoặc https://).');
         }
-        data = await summarizeUrlApi(url, langChoice, length);
+        data = await summarizeUrlApi(url, langChoice, langChoice === 'en' ? length : 'medium');
       } else if (activeTab === 'topic') {
         if (!topic || topic.trim().length < 2) {
           throw new Error('Vui lòng nhập từ khóa chủ đề cần tóm tắt.');
         }
-        data = await summarizeTopicApi(topic, langChoice === 'auto' ? 'vi' : langChoice, length);
+        data = await summarizeTopicApi(topic, langChoice === 'auto' ? 'vi' : langChoice, langChoice === 'en' ? length : 'medium');
       }
 
       setResult(data);
@@ -94,7 +94,7 @@ export default function App() {
                   setTopic={setTopic}
                 />
 
-                <LengthSelector length={length} setLength={setLength} />
+                <LengthSelector length={length} setLength={setLength} langChoice={langChoice} />
               </div>
 
               {/* Submit Button */}
@@ -120,6 +120,10 @@ export default function App() {
                 <div className="h-[540px] overflow-y-auto space-y-5 pr-1.5 scrollbar-thin scrollbar-thumb-slate-300">
                   {/* Topic Timeline & Notice Banner at VERY TOP */}
                   <TopicBanner dateRange={result.date_range} notice={result.notice} />
+                  <div className="rounded-xl bg-brand-50 border border-brand-100 px-4 py-3 text-xs text-brand-700 space-y-1">
+                    <p className="font-semibold">{result.stats.method}</p>
+                    <p>{result.stats.note}</p>
+                  </div>
 
                   <SummaryOutput
                     sentences={result.summary_sentences}
@@ -131,6 +135,7 @@ export default function App() {
                   <OriginalViewer
                     title={result.title}
                     originalText={result.original_text}
+                    sentenceSpans={result.original_sentence_spans}
                     highlightIndices={result.highlight_indices}
                     activeHoverIndex={activeHoverIndex}
                     setActiveHoverIndex={setActiveHoverIndex}

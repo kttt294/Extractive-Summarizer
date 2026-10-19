@@ -10,7 +10,7 @@ const client = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 60000, // 60 seconds timeout to allow model loading
+  timeout: 180000, // Bao gồm thời gian tải mô hình tiếng Anh ở lần dùng đầu.
 });
 
 export const summarizeTextApi = async (text, lang = 'auto', length = 'medium') => {

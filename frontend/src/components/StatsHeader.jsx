@@ -19,16 +19,16 @@ export default function StatsHeader({ stats }) {
       bg: 'bg-white border-gray-200'
     },
     {
-      label: 'Silhouette Score',
-      value: stats.silhouette_score,
-      sub: 'Độ phân tách cụm',
+      label: stats.silhouette_score == null ? 'Phương pháp' : 'Silhouette Score',
+      value: stats.silhouette_score == null ? 'Logistic v2' : stats.silhouette_score,
+      sub: stats.silhouette_score == null ? 'SBERT pretrained · seed 42' : 'Độ phân tách cụm',
       accent: 'text-violet-600',
       bg: 'bg-white border-gray-200'
     },
     {
       label: 'Diversity Score',
-      value: stats.diversity_score,
-      sub: 'Độ đa dạng ngữ nghĩa',
+      value: stats.diversity_score ?? '—',
+      sub: stats.diversity_score == null ? 'Cần ít nhất 2 câu' : 'Độ đa dạng ngữ nghĩa',
       accent: 'text-amber-600',
       bg: 'bg-white border-gray-200'
     }

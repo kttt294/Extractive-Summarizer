@@ -5,8 +5,8 @@ from backend.routers import health, summarize
 
 app = FastAPI(
     title="Extractive Summarizer REST API",
-    description="FastAPI Backend Server for SBERT + K-Means Extractive Summarization",
-    version="1.0.0"
+    description="Tiếng Việt: SBERT pretrained + Logistic v2; tiếng Anh: SBERT + K-Means kế thừa.",
+    version="2.0.0"
 )
 
 # Configure CORS Middleware to allow requests
@@ -24,13 +24,11 @@ app.include_router(summarize.router)
 
 @app.on_event("startup")
 def startup_event():
-    print("Pre-warming SBERT Embedding Engine...")
-    try:
-        from src.embedding import embed_sentences
-        embed_sentences([(0, "Khởi động hệ thống tóm tắt.")], lang='vi')
-        print("SBERT Engine ready!")
-    except Exception as e:
-        print(f"Pre-warming note: {e}")
+    if os.getenv('PRELOAD_MODELS', 'true').lower() == 'true':
+        from backend.services.advanced_predictor import get_predictor
+        print('Loading advanced ML v2 Vietnamese model...')
+        get_predictor()
+        print('Vietnamese Logistic v2 ready.')
 
 @app.get("/api")
 def api_root():

@@ -30,3 +30,10 @@ outputs/
 frontend/node_modules/
 frontend/dist/
 node_modules/
+advanced_ml*_results/
+docs/
+tests/
+tools/
+*.zip
+.env
+.env.*

@@ -4,11 +4,18 @@ services:
       context: .
       dockerfile: backend/Dockerfile
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     volumes:
-      - ./models:/app/models
+      - ./models:/app/models:ro
+      - hf_cache:/app/.cache/huggingface
     environment:
-      - PYTHONUNBUFFERED=1
+      HF_TOKEN: ${HF_TOKEN:-}
+      VI_HEAD_PATH: ${VI_HEAD_PATH:-}
+      MODEL_DEVICE: cpu
+      PRELOAD_MODELS: "true"
+      OMP_NUM_THREADS: ${MODEL_CPU_THREADS:-2}
+      MKL_NUM_THREADS: ${MODEL_CPU_THREADS:-2}
+    init: true
     restart: unless-stopped
 
   frontend:
@@ -21,6 +28,10 @@ services:
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     restart: unless-stopped
+
+volumes:
+  hf_cache:
 

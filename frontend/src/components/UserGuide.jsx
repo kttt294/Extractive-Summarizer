@@ -15,21 +15,20 @@ export default function UserGuide({ onStartSummarizing }) {
     },
     {
       step: '02',
-      title: 'Tùy Chỉnh Độ Dài Bản Tóm Tắt',
-      desc: 'Lựa chọn mức tỷ lệ nén mong muốn:',
+      title: 'Độ Dài Và Phương Pháp Tóm Tắt',
+      desc: 'Phương pháp được hiển thị cùng mỗi kết quả:',
       items: [
-        { label: 'Ngắn gọn:', text: 'Giữ lại các ý chính cốt lõi nhất, đọc nhanh trong 5 giây.' },
-        { label: 'Tiêu chuẩn:', text: 'Tỷ lệ nén tối ưu nhất thu được từ thực nghiệm Grid Search.' },
-        { label: 'Chi tiết:', text: 'Bao quát sâu các chi tiết, thích hợp cho bài báo nghiên cứu.' }
+        { label: 'Tiếng Việt:', text: 'SBERT + Logistic Regression v2 chọn 3 câu theo cấu hình thực nghiệm; bài ngắn có thể ít hơn 3 câu.' },
+        { label: 'Tiếng Anh:', text: 'Giữ phương pháp SBERT + K-Means kế thừa, có ba mức độ dài.' }
       ]
     },
     {
       step: '03',
       title: 'Phân Tích Chỉ Số Nội Tại (Intrinsic Metrics)',
-      desc: 'Hệ thống tự động tính toán 2 chỉ số chất lượng:',
+      desc: 'Các chỉ số mô tả bản tóm tắt, không thay thế đánh giá với bản tham chiếu:',
       items: [
-        { label: 'Silhouette Score:', text: 'Đo độ phân tách ngữ nghĩa giữa các cụm K-Means Clustering.' },
-        { label: 'Diversity Score:', text: 'Đo độ đa dạng thông tin, đảm bảo bản tóm tắt không bị lặp ý.' }
+        { label: 'Silhouette Score:', text: 'Chỉ hiển thị với phương pháp K-Means của tiếng Anh; không áp dụng cho Logistic.' },
+        { label: 'Diversity Score:', text: 'Mô tả sự khác biệt giữa embedding các câu được chọn; không bảo đảm loại hết ý trùng hoặc giữ đủ thông tin.' }
       ]
     },
     {
