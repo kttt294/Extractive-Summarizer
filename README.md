@@ -6,7 +6,7 @@ Logistic Regression, MLP, K-Means, centroid, Lead-3 và TextRank trên VietNews.
 ## Cấu trúc
 
 - `docs/BaoCao_BTL.docx`: báo cáo hoàn chỉnh, gồm phân tích loss curve SBERT/MLP.
-- `AdvancedML_ExtractiveSummarizer.ipynb`: notebook end-to-end đã lưu output.
+- `docs/AdvancedML_ExtractiveSummarizer.ipynb`: notebook end-to-end đã lưu output.
 - `src/`: thuật toán; `tests/`: kiểm thử giao thức và website.
 - `backend/`, `frontend/`: website demo; Dockerfile và `docker-compose.yml`
   phục vụ triển khai.
