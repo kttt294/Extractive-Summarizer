@@ -172,5 +172,5 @@ def test_notebook_is_one_sequential_workflow_with_github_setup():
         'run_training', 'run_test', 'add_bertscore', 'make_plots')]
     assert stages == sorted(stages)
     final_cell = ''.join(new['cells'][-1]['source'])
-    assert 'shutil.make_archive(' in final_cell
+    assert 'shutil.make_archive(' in final_cell or 'zipfile.ZipFile(' in final_cell
     assert 'files.download(result_zip)' in final_cell

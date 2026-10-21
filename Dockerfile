@@ -32,10 +32,10 @@ ENV HOME=/home/user \
 WORKDIR $HOME/app
 
 # Install python dependencies
-COPY --chown=user requirements-web.txt .
+COPY --chown=user requirements/web.txt ./requirements/web.txt
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir torch==2.11.0 --index-url https://download.pytorch.org/whl/cpu && \
-    pip install --no-cache-dir -r requirements-web.txt && \
+    pip install --no-cache-dir -r requirements/web.txt && \
     python -m nltk.downloader -d /opt/nltk_data punkt punkt_tab
 
 # Copy source code and backend

@@ -14,7 +14,6 @@ htmlcov/
 # Environment Variables & Secrets (Bảo mật API Keys & Credentials)
 .env
 .env.*
-!.env.example
 *.env
 
 # Models & Heavy Binary Outputs (Bỏ qua weights mô hình nặng, chỉ giữ .gitkeep)
@@ -53,5 +52,12 @@ Thumbs.db
 *.log
 ~$*
 
-docs/
-advanced_ml*_results/
+# Báo cáo và kết quả gọn được giữ trong bài nộp; không đưa cache/weights lên Git.
+advanced_ml*_results/encoder_finetuned/
+advanced_ml*_results/finetune_checkpoints/
+advanced_ml*_results/heads/
+advanced_ml*_results/embeddings/
+advanced_ml*_results/bertscore_cache.json
+
+# Hướng dẫn triển khai cá nhân, chỉ giữ local.
+/DEPLOY_VPS.md

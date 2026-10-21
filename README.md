@@ -1,80 +1,112 @@
-# Hệ thống Tóm tắt Văn bản Đa lĩnh vực (Extractive Summarization AI)
+# Học biểu diễn và lựa chọn mô hình cho tóm tắt trích xuất tiếng Việt
 
-Mô hình tóm tắt văn bản trích xuất (Extractive Summarization) song ngữ Anh - Việt ứng dụng **Sentence-BERT Fine-Tuned**, **K-Means Clustering**, **Dynamic Adaptive K**, **Post-filtering (Lọc trùng Cosine)** và **Khung Đánh giá Kép (Intrinsic & Extrinsic Metrics)**.
+Bài tập lớn môn Học máy nâng cao. Nghiên cứu so sánh SBERT pretrained và fine-tuned,
+Logistic Regression, MLP, K-Means, centroid, Lead-3 và TextRank trên VietNews.
+Các phương pháp cùng chọn ba câu trên 3.000 bài train, 500 validation và 1.000 test.
 
----
+## Tài liệu để chấm bài
 
-## Tính năng Chính
+- `docs/BaoCao_BTL.docx`: báo cáo hoàn chỉnh, gồm phân tích loss curve SBERT/MLP.
+- `AdvancedML_ExtractiveSummarizer.ipynb`: notebook end-to-end đã lưu output.
+- `src/`: thuật toán; `tests/`: kiểm thử giao thức và website.
+- `backend/`, `frontend/`: website demo; Dockerfile và `docker-compose.yml`
+  phục vụ triển khai.
+- `requirements/`: thư viện cho Colab và website; `requirements.txt` cài cả hai.
 
-1. **Khung Đánh giá Kép (Dual-Evaluation Framework):**
-   - **Nội tại (Intrinsic Metrics):** Silhouette Score (độ sắc nét phân cụm K-Means), Diversity Score (khả năng chống lặp ý), Compression Ratio (tỷ lệ nén độ dài văn bản).
-   - **Ngoại tại (Extrinsic Metrics):** ROUGE-1, ROUGE-2, ROUGE-L (độ phủ từ vựng), BERTScore F1 và SBERT Cosine (độ tương đồng ngữ nghĩa so với nhãn chuẩn).
-2. **Fine-Tuning SBERT & Thuật toán Dynamic Adaptive K:**
-   - Tối ưu hóa mô hình SBERT với hàm mất mát CosineSimilarityLoss.
-   - Tính toán số cụm $ và số câu mục tiêu thích ứng toán học hoàn toàn  = \text{round}(N \times \alpha \times \text{scale})$ theo 3 chế độ độ dài (Ngắn gọn, Tiêu chuẩn, Chi tiết).
-3. **Sản phẩm Web App Full-Stack (FastAPI + React + TailwindCSS):**
-   - Tự động nhận diện ngôn ngữ bài viết (langdetect).
-   - Cào dữ liệu theo định hướng vùng địa lý (n-vi, us-en) khi tìm kiếm tin tức theo từ khóa chủ đề.
-   - Tóm tắt qua đoạn văn thô, đường link URL bài báo (
-ewspaper3k + bóc tách Sapo), hoặc theo từ khóa chủ đề tin tức 24h.
-   - Tính năng **Interactive Highlighting**: Di chuột vào câu tóm tắt thì câu tương ứng trong đoạn gốc tự động phát sáng.
-4. **Triển khai Đóng gói Docker Compose:**
-   - 1 câu lệnh deploy toàn bộ Frontend & Backend lên VPS.
+Ảnh website trong báo cáo được giữ từ giao diện cũ để minh họa; chưa phải
+bằng chứng nghiệm thu phiên bản mới trên VPS.
 
----
+## Chạy lại thực nghiệm
 
-## Cấu trúc Mã nguồn (Project Structure)
+Mở `AdvancedML_ExtractiveSummarizer.ipynb` trên Google Colab, chọn GPU T4 rồi Run all.
+Notebook tự clone mã từ https://github.com/kttt294/Extractive-Summarizer và cài
+môi trường. Không cần Google Drive hoặc checkpoint đã fine-tune trước.
+Cell cuối đóng gói kết quả và tải ZIP về máy. Nếu đổi mã hoặc cấu hình, dùng
+`RUN_NAME` mới để tránh trộn cache; không chọn lại cấu hình theo điểm test.
 
-- **NLP_ExtractiveSummarizer.ipynb**: Notebook chính dùng trên Google Colab để huấn luyện (Fine-tune) mô hình SBERT và chạy thử nghiệm đánh giá (Ablation Study).
-- **src/**: Chứa các script Python cốt lõi của thuật toán tóm tắt (tiền xử lý, nhúng vector, phân cụm K-Means, tạo bộ dữ liệu huấn luyện, và các chỉ số đo lường).
-- **ackend/**: Mã nguồn API Server viết bằng FastAPI (Python) dùng để phục vụ mô hình học máy ra môi trường web.
-- **rontend/**: Mã nguồn Giao diện người dùng Web UI viết bằng ReactJS và TailwindCSS.
-- **models/**: Thư mục lưu trữ các file trọng số (weights) sau khi mô hình được huấn luyện xong (người dùng sẽ tự tải vào đây).
-- **docs/**: Chứa các tài liệu, cấu trúc báo cáo hoặc sơ đồ hệ thống tham khảo.
-- **docker-compose.yml**: Tệp cấu hình để triển khai toàn bộ hệ thống (Frontend + Backend) bằng Docker chỉ với 1 câu lệnh.
-- **
-equirements.txt**: Danh sách các thư viện Python cần thiết cho hệ thống Backend.
+Để chạy riêng ablation trên runtime mới, chỉ chạy từ **mục 13** ở cuối notebook.
+Phần này tự tải head/scaler của nhóm từ Hugging Face, lấy lại đúng mẫu dữ liệu
+và tạo embedding pretrained; không fine-tune lại encoder. Chọn GPU T4.
+Model đã public nên không cần token hoặc đăng nhập Hugging Face.
+Tám cấu hình đặc trưng được so sánh trên Logistic/MLP với ba seed; cell cuối
+tải ZIP chứa các bảng, loss trace, hình và metadata, không kèm weights/cache.
 
----
+Kết quả đã được trình bày trong output notebook và báo cáo. Bản nộp không kèm
+thư mục kết quả rời, cache, optimizer hoặc weights. Chạy lại notebook từ đầu
+trên Colab để tạo lại dữ liệu, các CSV, lịch sử loss, biểu đồ và model.
 
-## Hướng dẫn Chạy Thử nghiệm
+## Model đã huấn luyện
 
-### 1. Chuẩn bị dữ liệu và Huấn luyện (Google Colab)
+Weights lưu trên Hugging Face, không đóng kèm bài nộp:
 
-**LƯU Ý QUAN TRỌNG TRƯỚC KHI CHẠY COLAB:** 
-File Notebook NLP_ExtractiveSummarizer.ipynb được thiết kế để tự động tải mã nguồn này về môi trường Colab. Do đó, bạn **BẮT BUỘC** phải tải (push) toàn bộ thư mục code này lên một kho lưu trữ (Repository) trên tài khoản GitHub cá nhân của bạn trước tiên.
-- **Bước 1:** Đẩy (Push) thư mục code này lên tài khoản GitHub của bạn.
-- **Bước 2:** Mở file NLP_ExtractiveSummarizer.ipynb trên Google Colab.
-- **Bước 3:** Tìm đến ô code thứ 3 (phần git clone) và thay thế đoạn link https://github.com/YOUR_GITHUB_USERNAME/YOUR_REPOSITORY.git bằng link GitHub thực tế của bạn.
-- **Bước 4:** Chạy các ô code để bắt đầu Fine-tune và Đánh giá mô hình.
+- Encoder fine-tuned: https://huggingface.co/kttt294/vietnamese-sbert-advanced-ml-v2
+- Logistic/MLP kèm scaler, ba seed: https://huggingface.co/kttt294/vietnamese-extractive-heads-advanced-ml-v2
 
-### 2. Chạy Web App trên Máy Local
+Hai repository này đã **public**. Notebook và website tải model trực tiếp,
+không cần token hoặc tài khoản Hugging Face. Không có token trong bài nộp.
+Backend cố định revision và kiểm tra checksum Logistic trước khi nạp model.
 
-#### A. Backend (FastAPI):
+Website tiếng Việt tự tải encoder pretrained công khai và Logistic seed 42 từ Hub.
+Không thay encoder này bằng bản fine-tuned: head được học trên đặc trưng pretrained.
+Tiếng Anh dùng encoder pretrained công khai với K-Means kế thừa.
 
-`ash
-pip install -r requirements.txt
-python -m backend.main
-# Server chạy tại: http://localhost:8000
-# Swagger API Docs: http://localhost:8000/docs
-`
+## Chạy website và kiểm thử
 
-#### B. Frontend (React + Vite):
+Trên VPS, chạy `docker compose up -d --build`. Model public nên không cần tạo
+`.env` hoặc khai báo `HF_TOKEN` để tải model. Cấu hình Nginx hiện dùng chứng chỉ HTTPS của
+`syssummarizers.tech` tại `/etc/letsencrypt`; đổi tên miền/chứng chỉ nếu cần.
 
-`ash
+Khi phát triển local:
+
+```bash
+pip install torch --index-url https://download.pytorch.org/whl/cpu
+pip install -r requirements/web.txt
+python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000
+```
+
+Mở terminal khác:
+
+```bash
 cd frontend
-npm install
+npm ci
 npm run dev
-# Web UI chạy tại: http://localhost:5173
-`
+```
 
----
+Kiểm thử không tải model hoặc dataset:
 
-## Triển khai với Docker Compose (VPS Deployment)
+```bash
+pip install -r requirements/ml.txt -r requirements/web.txt pytest httpx
+python -m pytest -q tests
+```
 
-`ash
-docker-compose up --build -d
-`
+Một kiểm thử đối chiếu artifact thật chỉ chạy khi có đủ weights và cache embedding;
+bản nộp gọn sẽ bỏ qua kiểm thử đó. Các kiểm thử giao thức và API còn lại vẫn chạy.
 
-- **Frontend Nginx Web UI:** http://localhost:80 (hoặc IP VPS)
-- **Backend FastAPI REST API:** http://localhost:8000
+
+## Thiết kế thực nghiệm
+
+Dữ liệu VietNews được lấy mẫu với seed cố định, kiểm tra trùng chính xác sau
+chuẩn hóa; chưa kiểm tra đầy đủ bài gần trùng. Mọi phương pháp cùng chọn ba câu,
+nhưng độ dài theo từ vẫn khác nhau nên cần đọc kèm thống kê độ dài.
+
+Nghiên cứu tách hai nhánh: pretrained/fine-tuned SBERT cùng centroid hoặc K-Means;
+và Logistic/MLP học trên embedding pretrained đóng băng cùng ba đặc trưng phụ
+(vị trí, log độ dài, cosine với tâm bài). Scaler chỉ fit train. Nhãn chọn câu
+là greedy ROUGE-1+2 oracle xấp xỉ, không phải nhãn do người đọc gán.
+
+SBERT học cosine MSE bằng AdamW trong ba epoch, seed 42; checkpoint được chọn
+bằng validation MSE thấp nhất. Logistic khảo sát C = 0,01/1/100; MLP 128 ReLU
+khảo sát alpha = 0/0,001/0,1 và Adam/SGD ở lr = 0,001. MLP early stopping theo
+validation log-loss. Chọn siêu tham số theo validation ROUGE-L rồi lặp ba seed
+42/123/2026 và các tỷ lệ train 25%/50%/100%. Đây không phải nested CV; fine-tuning
+encoder chỉ chạy một seed.
+
+Test được đánh giá sau khi khóa lựa chọn. ROUGE tiếng Việt dùng tokenizer Unicode
+NFC theo âm tiết, giữ dấu; không so trực tiếp với điểm tokenizer ASCII của bài NLP
+cũ. BERTScore dùng encoder đánh giá độc lập. Khoảng tin cậy paired bootstrap lấy
+mẫu theo bài sau khi trung bình seed, mang tính khám phá và chưa chỉnh nhiều so sánh.
+
+Logistic đạt ROUGE-L trung bình cao nhất trong các cấu hình đã thử, còn Lead-3
+dẫn đầu ROUGE-1, ROUGE-2 và BERTScore. Validation MSE của SBERT giảm mạnh chưa
+chứng minh cải thiện chắc chắn chất lượng K-Means. MLP có dấu hiệu overfitting
+sau epoch 2. Xem output notebook và báo cáo để đọc biểu đồ và phân tích đầy đủ.

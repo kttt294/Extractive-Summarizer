@@ -28,7 +28,13 @@ def test_source_spans_track_repeated_sentences_and_emoji():
     assert spans[0]['end'] < spans[1]['start']
 
 
-@pytest.mark.skipif(not RESULTS.exists(), reason='Dữ liệu Colab chỉ có trên máy phát triển')
+@pytest.mark.skipif(
+    not all((RESULTS / name).is_file() for name in (
+        'heads/f7aa9d91fb34ea95976c.joblib',
+        'corpus.json', 'test_per_document.csv', 'embeddings/pretrained/test.npz',
+    )),
+    reason='Cần weights và cache embedding của lượt Colab để đối chiếu artifact thật',
+)
 def test_real_artifact_predictions_match_saved_notebook_results(monkeypatch):
     head = RESULTS/'heads/f7aa9d91fb34ea95976c.joblib'
     assert hashlib.sha256(head.read_bytes()).hexdigest() == prediction.HEAD_SHA256
