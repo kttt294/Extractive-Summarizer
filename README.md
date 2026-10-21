@@ -2,9 +2,8 @@
 
 Bài tập lớn môn Học máy nâng cao. Nghiên cứu so sánh SBERT pretrained và fine-tuned,
 Logistic Regression, MLP, K-Means, centroid, Lead-3 và TextRank trên VietNews.
-Các phương pháp cùng chọn ba câu trên 3.000 bài train, 500 validation và 1.000 test.
 
-## Tài liệu để chấm bài
+## Cấu trúc
 
 - `docs/BaoCao_BTL.docx`: báo cáo hoàn chỉnh, gồm phân tích loss curve SBERT/MLP.
 - `AdvancedML_ExtractiveSummarizer.ipynb`: notebook end-to-end đã lưu output.
@@ -12,9 +11,6 @@ Các phương pháp cùng chọn ba câu trên 3.000 bài train, 500 validation 
 - `backend/`, `frontend/`: website demo; Dockerfile và `docker-compose.yml`
   phục vụ triển khai.
 - `requirements/`: thư viện cho Colab và website; `requirements.txt` cài cả hai.
-
-Ảnh website trong báo cáo được giữ từ giao diện cũ để minh họa; chưa phải
-bằng chứng nghiệm thu phiên bản mới trên VPS.
 
 ## Chạy lại thực nghiệm
 
@@ -81,7 +77,6 @@ python -m pytest -q tests
 
 Một kiểm thử đối chiếu artifact thật chỉ chạy khi có đủ weights và cache embedding;
 bản nộp gọn sẽ bỏ qua kiểm thử đó. Các kiểm thử giao thức và API còn lại vẫn chạy.
-
 
 ## Thiết kế thực nghiệm
 
