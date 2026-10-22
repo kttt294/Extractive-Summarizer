@@ -50,7 +50,7 @@ Tiếng Anh dùng encoder pretrained công khai với K-Means kế thừa.
 
 Trên VPS, chạy `docker compose up -d --build`. Model public nên không cần tạo
 `.env` hoặc khai báo `HF_TOKEN` để tải model. Cấu hình Nginx hiện dùng chứng chỉ HTTPS của
-`syssummarizers.tech` tại `/etc/letsencrypt`; đổi tên miền/chứng chỉ nếu cần.
+`summarizer.techvi.io.vn` tại `/etc/letsencrypt`; tạo chứng chỉ đúng tên miền trước khi chạy.
 
 Khi phát triển local:
 
