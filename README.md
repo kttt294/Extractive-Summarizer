@@ -48,6 +48,11 @@ Tiếng Anh dùng encoder pretrained công khai với K-Means kế thừa.
 
 ## Chạy website và kiểm thử
 
+Project sử dụng **CPython 3.13**; cả hai Dockerfile đã cấu hình sẵn phiên bản này.
+Khi chạy local, tạo môi trường ảo bằng Python 3.13 và kích hoạt trước khi cài thư viện
+(Windows: `py -3.13 -m venv .venv`; Linux/macOS: `python3.13 -m venv .venv`).
+Nếu đang có môi trường Python 3.12, tạo lại môi trường ảo thay vì dùng lại thư mục cũ.
+
 Trên VPS, chạy `docker compose up -d --build`. Model public nên không cần tạo
 `.env` hoặc khai báo `HF_TOKEN` để tải model. Cấu hình Nginx hiện dùng chứng chỉ HTTPS của
 `summarizer.techvi.io.vn` tại `/etc/letsencrypt`; tạo chứng chỉ đúng tên miền trước khi chạy.

@@ -14,7 +14,7 @@ from src import advanced_ml as ml
 
 def notebook_functions():
     notebook = json.loads((Path(__file__).resolve().parents[1] /
-                           'AdvancedML_ExtractiveSummarizer.ipynb').read_text(encoding='utf-8'))
+                           'docs/AdvancedML_ExtractiveSummarizer.ipynb').read_text(encoding='utf-8'))
     code = next(''.join(c['source']) for c in notebook['cells']
                 if 'def run_feature_ablation(' in ''.join(c['source']))
     tree = ast.parse(code)
@@ -97,7 +97,7 @@ def test_ablation_tables_plot_and_zip_exclude_heavy_cache(tmp_path):
     matplotlib.use('Agg')
     functions = notebook_functions()
     notebook = json.loads((Path(__file__).resolve().parents[1] /
-                           'AdvancedML_ExtractiveSummarizer.ipynb').read_text(encoding='utf-8'))
+                           'docs/AdvancedML_ExtractiveSummarizer.ipynb').read_text(encoding='utf-8'))
     rows = []
     for split in ('validation', 'test'):
         for family in ('logistic', 'mlp'):

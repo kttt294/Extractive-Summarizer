@@ -2,7 +2,7 @@
 # Torch CPU được cài riêng trong Dockerfile để tránh tải CUDA trên VPS.
 numpy==2.1.3
 scikit-learn==1.6.1
-scipy>=1.13,<1.17
+scipy>=1.14.1,<1.17
 joblib>=1.3,<2
 sentence-transformers==3.4.1
 transformers==4.57.6

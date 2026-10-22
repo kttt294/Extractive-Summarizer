@@ -158,7 +158,7 @@ def test_training_does_not_read_test_documents(tmp_path):
 
 def test_notebook_is_one_sequential_workflow_with_github_setup():
     root = Path(__file__).resolve().parents[1]
-    new = json.loads((root/'AdvancedML_ExtractiveSummarizer.ipynb').read_text(encoding='utf-8'))
+    new = json.loads((root/'docs/AdvancedML_ExtractiveSummarizer.ipynb').read_text(encoding='utf-8'))
     source = '\n'.join(''.join(c['source']) for c in new['cells'])
     assert 'https://github.com/kttt294/Extractive-Summarizer.git' in source
     for obsolete in ('RUN_LEGACY', 'smoke', 'files.upload', 'drive.mount', '/content/drive', 'Phụ lục'):
@@ -171,6 +171,7 @@ def test_notebook_is_one_sequential_workflow_with_github_setup():
         'prepare_corpus', 'finetune_encoder', 'cache_embeddings',
         'run_training', 'run_test', 'add_bertscore', 'make_plots')]
     assert stages == sorted(stages)
-    final_cell = ''.join(new['cells'][-1]['source'])
+    final_cell = next(''.join(c['source']) for c in reversed(new['cells'])
+                      if c['cell_type'] == 'code' and ''.join(c['source']).strip())
     assert 'shutil.make_archive(' in final_cell or 'zipfile.ZipFile(' in final_cell
     assert 'files.download(result_zip)' in final_cell
