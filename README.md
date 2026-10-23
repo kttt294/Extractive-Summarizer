@@ -45,6 +45,10 @@ Backend cố định revision và kiểm tra checksum Logistic trước khi nạ
 Website tiếng Việt tự tải encoder pretrained công khai và Logistic seed 42 từ Hub.
 Không thay encoder này bằng bản fine-tuned: head được học trên đặc trưng pretrained.
 Tiếng Anh dùng encoder pretrained công khai với K-Means kế thừa.
+Website hỗ trợ ba chế độ cho cả nhập văn bản, URL và chủ đề, kể cả nhận diện ngôn ngữ
+tự động. Tiếng Việt chọn tối đa 2/3/5 câu tương ứng Ngắn gọn/Tiêu chuẩn/Chi tiết;
+Tiêu chuẩn vẫn khớp ngân sách 3 câu trong báo cáo. Hai độ dài bổ sung là tùy chọn
+ứng dụng, không thay đổi giao thức hoặc kết quả đánh giá trong notebook.
 
 ## Chạy website và kiểm thử
 

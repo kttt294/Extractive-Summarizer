@@ -13,7 +13,8 @@ def process_summarization(text, user_lang='auto', length='medium', use_finetuned
     start = time.perf_counter()
     lang = resolve_language(text, user_choice=user_lang)
     if lang == 'vi':
-        sentences, indices, embeddings = get_predictor().summarize(text)
+        target = {'brief': 2, 'medium': 3, 'detailed': 5}[length]
+        sentences, indices, embeddings = get_predictor().summarize(text, k=target)
         summary = [sentences[i] for i in indices]
         selected_embs = [embeddings[i] for i in indices]
         silhouette = None
@@ -47,7 +48,7 @@ def process_summarization(text, user_lang='auto', length='medium', use_finetuned
                    silhouette_score=round(silhouette, 4) if silhouette is not None else None,
                    diversity_score=diversity, detected_language=lang.upper(),
                    method=method, model_version=version,
-                   summary_policy='fixed-3' if lang == 'vi' else 'adaptive',
-                   note=('Tiếng Việt: chọn tối đa 3 câu theo cấu hình thực nghiệm. '
-                         'Văn bản ít hơn 3 câu hợp lệ sẽ giữ các câu hiện có.' if lang == 'vi'
+                   summary_policy=f'top-{target}' if lang == 'vi' else 'adaptive',
+                   note=(f'Tiếng Việt: chọn tối đa {target} câu và giữ thứ tự trong bài gốc. '
+                         'Bài ngắn giữ tối đa số câu hợp lệ hiện có.' if lang == 'vi'
                          else 'Tiếng Anh dùng phương pháp SBERT + K-Means kế thừa.')))

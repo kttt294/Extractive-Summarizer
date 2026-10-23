@@ -61,3 +61,5 @@ advanced_ml*_results/bertscore_cache.json
 
 # Hướng dẫn triển khai cá nhân, chỉ giữ local.
 /DEPLOY_VPS.md
+
+output/

@@ -18,7 +18,7 @@ export default function UserGuide({ onStartSummarizing }) {
       title: 'Độ Dài Và Phương Pháp Tóm Tắt',
       desc: 'Phương pháp được hiển thị cùng mỗi kết quả:',
       items: [
-        { label: 'Tiếng Việt:', text: 'SBERT + Logistic Regression v2 chọn 3 câu theo cấu hình thực nghiệm; bài ngắn có thể ít hơn 3 câu.' },
+        { label: 'Tiếng Việt:', text: 'SBERT + Logistic Regression: Ngắn gọn tối đa 2 câu, Tiêu chuẩn 3 câu, Chi tiết 5 câu; bài ngắn giữ tối đa số câu hợp lệ hiện có.' },
         { label: 'Tiếng Anh:', text: 'Giữ phương pháp SBERT + K-Means kế thừa, có ba mức độ dài.' }
       ]
     },

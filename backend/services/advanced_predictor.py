@@ -63,7 +63,7 @@ class AdvancedPredictor:
         self.encoder = encoder
         self.lock = Lock()
 
-    def summarize(self, text):
+    def summarize(self, text, k=3):
         sentences = split_sentences(text, 'vi')
         if not sentences:
             raise ValueError('Văn bản không có câu hợp lệ; mỗi câu cần từ 4 đến 150 đơn vị cách trắng.')
@@ -76,7 +76,7 @@ class AdvancedPredictor:
             X = self.fitted['scaler'].transform(features({'sentences': sentences}, emb))
             classes = list(self.fitted['model'].classes_)
             scores = self.fitted['model'].predict_proba(X)[:, classes.index(1)]
-        selected = select_top(scores, min(3, len(sentences)))
+        selected = select_top(scores, min(k, len(sentences)))
         return sentences, selected, emb
 
 

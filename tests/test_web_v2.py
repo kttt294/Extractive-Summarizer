@@ -62,26 +62,57 @@ def test_real_artifact_predictions_match_saved_notebook_results(monkeypatch):
     arrays.close()
 
 
+def test_predictor_length_changes_budget_and_preserves_source_order(monkeypatch):
+    sentences = [f'Câu thứ {i} có đầy đủ thông tin.' for i in range(4)]
+    monkeypatch.setattr(prediction, 'split_sentences', lambda text, lang: sentences)
+    monkeypatch.setattr(prediction, 'encoder_text', lambda text, lang: text)
+
+    class Encoder:
+        def encode(self, texts, **kwargs):
+            return np.eye(len(texts), 768, dtype=np.float32)
+
+    class Scaler:
+        def transform(self, values):
+            return values
+
+    class Model:
+        classes_ = np.array([0, 1])
+
+        def predict_proba(self, values):
+            scores = np.array([0.2, 0.8, 0.5, 0.9])
+            return np.column_stack([1 - scores, scores])
+
+    predictor = prediction.AdvancedPredictor.__new__(prediction.AdvancedPredictor)
+    predictor.encoder = Encoder()
+    predictor.fitted = {'scaler': Scaler(), 'model': Model()}
+    predictor.lock = prediction.Lock()
+    for count, expected in [(2, [1, 3]), (3, [1, 2, 3]), (5, [0, 1, 2, 3])]:
+        _, selected, _ = predictor.summarize(' '.join(sentences), k=count)
+        assert selected == expected
+
+
 class FakePredictor:
-    def summarize(self, text):
+    def summarize(self, text, k=3):
         sentences = text.split('\n')
         embeddings = np.eye(len(sentences), 768, dtype=np.float32)
-        return sentences, list(range(min(3, len(sentences)))), embeddings
+        return sentences, list(range(min(k, len(sentences)))), embeddings
 
 
-def test_vietnamese_fixed_budget_and_no_silhouette(monkeypatch):
+def test_vietnamese_length_modes_and_no_silhouette(monkeypatch):
     monkeypatch.setattr(service, 'get_predictor', lambda: FakePredictor())
     text = '\n'.join(f'Câu thứ {i} có đủ thông tin.' for i in range(5))
-    for length in ('brief', 'medium', 'detailed'):
+    for length, count in [('brief', 2), ('medium', 3), ('detailed', 5)]:
         response = SummarizeResponse(**service.process_summarization(text, 'vi', length))
-        assert response.stats.summary_sentence_count == 3
+        assert response.stats.summary_sentence_count == count
+        assert response.stats.summary_policy == f'top-{count}'
         assert response.stats.silhouette_score is None
         assert response.stats.model_version == 'advanced-ml-v2-logistic-seed42'
-        assert response.highlight_indices == [0, 1, 2]
+        assert response.highlight_indices == list(range(count))
         assert len(response.original_sentence_spans) == 5
-    short = service.process_summarization('Một câu đủ nội dung.', 'vi')
-    assert short['stats']['summary_sentence_count'] == 1
-    assert short['stats']['diversity_score'] is None
+    for length in ('brief', 'medium', 'detailed'):
+        short = service.process_summarization('Một câu đủ nội dung.', 'vi', length)
+        assert short['stats']['summary_sentence_count'] == 1
+        assert short['stats']['diversity_score'] is None
 
 
 def test_api_and_all_input_routes_use_same_v2_service(monkeypatch):
@@ -96,17 +127,22 @@ def test_api_and_all_input_routes_use_same_v2_service(monkeypatch):
     with TestClient(app) as client:
         cases = [('text', {'text': text}), ('url', {'url': 'https://example.com/article'}), ('topic', {'topic': 'học máy'})]
         for route, payload in cases:
-            response = client.post(f'/api/v1/summarize/{route}', json={**payload, 'lang': 'vi'})
-            assert response.status_code == 200, response.text
-            body = response.json()
-            assert body['stats']['summary_sentence_count'] == 3
-            assert body['stats']['method'] == 'SBERT + Logistic Regression'
-            assert body['stats']['silhouette_score'] is None
+            for length, count in [('brief', 2), ('medium', 3), ('detailed', 4)]:
+                response = client.post(f'/api/v1/summarize/{route}', json={**payload, 'lang': 'vi', 'length': length})
+                assert response.status_code == 200, response.text
+                body = response.json()
+                assert body['stats']['summary_sentence_count'] == count
+                assert body['stats']['method'] == 'SBERT + Logistic Regression'
+                assert body['stats']['silhouette_score'] is None
         health = client.get('/api/v1/health').json()
         assert health['version'] == '2.0.0'
 
 
 def test_artifact_failure_never_falls_back_to_old_model(monkeypatch, tmp_path):
+    # Kiểm tra riêng checksum, không phụ thuộc phiên bản tokenizer của máy chạy test.
+    original_version = prediction.importlib.metadata.version
+    monkeypatch.setattr(prediction.importlib.metadata, 'version',
+                        lambda name: '8.3.0' if name == 'underthesea' else original_version(name))
     bad = tmp_path/'wrong.joblib'
     bad.write_bytes(b'not-the-deployed-artifact')
     monkeypatch.setenv('VI_HEAD_PATH', str(bad))

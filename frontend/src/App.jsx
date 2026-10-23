@@ -38,17 +38,17 @@ export default function App() {
         if (!text || text.trim().length < 50) {
           throw new Error('Vui lòng nhập đoạn văn bản dài tối thiểu 50 ký tự.');
         }
-        data = await summarizeTextApi(text, langChoice, langChoice === 'en' ? length : 'medium');
+        data = await summarizeTextApi(text, langChoice, length);
       } else if (activeTab === 'url') {
         if (!url || !url.startsWith('http')) {
           throw new Error('Vui lòng nhập đường link bài báo hợp lệ (bắt đầu bằng http:// hoặc https://).');
         }
-        data = await summarizeUrlApi(url, langChoice, langChoice === 'en' ? length : 'medium');
+        data = await summarizeUrlApi(url, langChoice, length);
       } else if (activeTab === 'topic') {
         if (!topic || topic.trim().length < 2) {
           throw new Error('Vui lòng nhập từ khóa chủ đề cần tóm tắt.');
         }
-        data = await summarizeTopicApi(topic, langChoice === 'auto' ? 'vi' : langChoice, langChoice === 'en' ? length : 'medium');
+        data = await summarizeTopicApi(topic, langChoice === 'auto' ? 'vi' : langChoice, length);
       }
 
       setResult(data);
@@ -94,7 +94,7 @@ export default function App() {
                   setTopic={setTopic}
                 />
 
-                <LengthSelector length={length} setLength={setLength} langChoice={langChoice} />
+                <LengthSelector length={length} setLength={setLength} />
               </div>
 
               {/* Submit Button */}
@@ -115,7 +115,7 @@ export default function App() {
             </div>
 
             {/* Right Column: Output Dashboard */}
-            <div className="lg:col-span-7">
+            <div className="min-w-0 lg:col-span-7">
               {result ? (
                 <div className="h-[540px] overflow-y-auto space-y-5 pr-1.5 scrollbar-thin scrollbar-thumb-slate-300">
                   {/* Topic Timeline & Notice Banner at VERY TOP */}
