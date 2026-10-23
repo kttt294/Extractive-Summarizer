@@ -14,7 +14,7 @@ export default function SummaryOutput({ sentences, highlightIndices, activeHover
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 shadow-card p-5 space-y-4">
+    <div className="bg-white rounded-2xl border border-gray-200 shadow-card p-4 sm:p-5 space-y-4">
       {/* Card Header */}
       <div className="flex items-center justify-between border-b border-gray-100 pb-3">
         <div className="flex items-center space-x-2">
@@ -53,7 +53,7 @@ export default function SummaryOutput({ sentences, highlightIndices, activeHover
                 }`}>
                   {idx + 1}
                 </span>
-                <p className="text-sm leading-relaxed">{sent}</p>
+                <p className="min-w-0 text-sm leading-relaxed [overflow-wrap:anywhere]">{sent}</p>
               </div>
             </div>
           );

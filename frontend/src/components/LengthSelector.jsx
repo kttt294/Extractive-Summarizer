@@ -12,7 +12,7 @@ export default function LengthSelector({ length, setLength }) {
       <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
         Độ dài bản tóm tắt
       </label>
-      <div className="flex gap-2">
+      <div className="grid grid-cols-3 gap-2">
         {options.map((opt) => {
           const isSelected = length === opt.id;
           return (
@@ -20,13 +20,14 @@ export default function LengthSelector({ length, setLength }) {
               key={opt.id}
               type="button"
               onClick={() => setLength(opt.id)}
-              className={`flex-1 py-3 px-3 rounded-xl border text-center transition-all cursor-pointer ${
+              aria-pressed={isSelected}
+              className={`min-w-0 min-h-11 py-3 px-1 sm:px-3 rounded-xl border text-center transition-all cursor-pointer ${
                 isSelected
                   ? 'border-brand-500 bg-brand-50 text-brand-600 font-semibold shadow-sm'
                   : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:text-gray-700'
               }`}
             >
-              <div className="text-sm font-medium">{opt.label}</div>
+              <div className="text-xs sm:text-sm font-medium">{opt.label}</div>
             </button>
           );
         })}

@@ -24,11 +24,11 @@ export default function OriginalViewer({ title, originalText, sentenceSpans = []
   }
   pieces.push(originalText.slice(cursor));
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 shadow-card p-5 space-y-4">
+    <div className="bg-white rounded-2xl border border-gray-200 shadow-card p-4 sm:p-5 space-y-4">
       <div className="border-b border-gray-100 pb-3">
         <h2 className="text-sm font-bold text-gray-800 leading-snug">{title || 'Văn Bản Gốc'}</h2>
       </div>
-      <div className="max-h-[420px] overflow-y-auto pr-2 text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">
+      <div className="max-h-80 sm:max-h-[420px] overflow-y-auto pr-2 text-sm text-gray-600 leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere]">
         {pieces}
       </div>
     </div>

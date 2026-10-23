@@ -2,16 +2,16 @@ import React, { useEffect } from 'react';
 import { AlertCircle, CheckCircle2, Info, X } from 'lucide-react';
 
 export default function Toast({ toast, onClose }) {
-  if (!toast || !toast.message) return null;
-
-  const { message, type = 'error' } = toast;
-
   useEffect(() => {
+    if (!toast?.message) return;
     const timer = setTimeout(() => {
       onClose();
     }, 4000);
     return () => clearTimeout(timer);
   }, [toast, onClose]);
+
+  if (!toast || !toast.message) return null;
+  const { message, type = 'error' } = toast;
 
   const configs = {
     error: {
@@ -35,7 +35,7 @@ export default function Toast({ toast, onClose }) {
   const Icon = config.icon;
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 animate-bounce-in max-w-sm w-full">
+    <div role="alert" className="fixed bottom-4 left-4 right-4 sm:bottom-6 sm:left-auto sm:right-6 z-50 animate-bounce-in sm:max-w-sm sm:w-full [overflow-wrap:anywhere]">
       <div className={`p-4 rounded-2xl border ${config.bg} flex items-center justify-between space-x-3 transition-all duration-300`}>
         <div className="flex items-center space-x-3">
           <Icon className={`w-5 h-5 ${config.iconColor} shrink-0`} />
@@ -43,6 +43,7 @@ export default function Toast({ toast, onClose }) {
         </div>
 
         <button
+          aria-label="Đóng thông báo"
           onClick={onClose}
           className="text-gray-400 hover:text-gray-600 p-1 rounded-lg transition-colors cursor-pointer"
         >

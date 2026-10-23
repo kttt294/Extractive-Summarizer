@@ -42,21 +42,21 @@ export default function UserGuide({ onStartSummarizing }) {
   ];
 
   return (
-    <div className="max-w-[86%] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-fade-in">
+    <div className="w-full lg:max-w-[86%] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8 animate-fade-in">
       {/* Title Header */}
       <div className="text-center max-w-2xl mx-auto space-y-2">
-        <h2 className="text-2xl font-extrabold text-gray-900">Cách Sử Dụng Extractive Summarizer</h2>
+        <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900">Cách Sử Dụng Extractive Summarizer</h2>
       </div>
 
       {/* Grid of Steps */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {steps.map((st, idx) => {
           return (
-            <div key={idx} className="bg-white rounded-2xl border border-gray-200 shadow-card p-6 space-y-4 hover:border-brand-200 transition-all">
+            <div key={idx} className="min-w-0 [overflow-wrap:anywhere] bg-white rounded-2xl border border-gray-200 shadow-card p-4 sm:p-6 space-y-4 hover:border-brand-200 transition-all">
               {/* Main Step Header (No Icon) */}
-              <div className="flex items-center justify-between">
+              <div className="flex items-start justify-between gap-3">
                 <h3 className="text-base font-bold text-gray-800">{st.title}</h3>
-                <span className="text-xl font-extrabold text-gray-300">{st.step}</span>
+                <span className="shrink-0 text-xl font-extrabold text-gray-300">{st.step}</span>
               </div>
 
               <p className="text-xs text-gray-500">{st.desc}</p>

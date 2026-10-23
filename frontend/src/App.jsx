@@ -76,12 +76,12 @@ export default function App() {
       {activePage === 'guide' ? (
         <UserGuide onStartSummarizing={() => setActivePage('summarize')} />
       ) : (
-        <main className="flex-1 max-w-[86%] w-full mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-10 space-y-6">
+        <main className="flex-1 w-full lg:max-w-[86%] mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-8 lg:py-10 space-y-6">
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
 
             {/* Left Column: Input Controller */}
-            <div className="lg:col-span-5 bg-white rounded-2xl border border-gray-200 shadow-card p-6 h-[540px] flex flex-col justify-between">
+            <div className="min-w-0 lg:col-span-5 bg-white rounded-2xl border border-gray-200 shadow-card p-4 sm:p-6 lg:h-[540px] flex flex-col justify-between gap-6">
               <div className="space-y-5">
                 <InputTabs
                   activeTab={activeTab}
@@ -117,14 +117,9 @@ export default function App() {
             {/* Right Column: Output Dashboard */}
             <div className="min-w-0 lg:col-span-7">
               {result ? (
-                <div className="h-[540px] overflow-y-auto space-y-5 pr-1.5 scrollbar-thin scrollbar-thumb-slate-300">
+                <div className="space-y-4 sm:space-y-5 lg:h-[540px] lg:overflow-y-auto lg:pr-1.5 scrollbar-thin scrollbar-thumb-slate-300">
                   {/* Topic Timeline & Notice Banner at VERY TOP */}
                   <TopicBanner dateRange={result.date_range} notice={result.notice} />
-                  <div className="rounded-xl bg-brand-50 border border-brand-100 px-4 py-3 text-xs text-brand-700 space-y-1">
-                    <p className="font-semibold">{result.stats.method}</p>
-                    <p>{result.stats.note}</p>
-                  </div>
-
                   <SummaryOutput
                     sentences={result.summary_sentences}
                     highlightIndices={result.highlight_indices}
@@ -145,11 +140,11 @@ export default function App() {
                   <StatsHeader stats={result.stats} />
                 </div>
               ) : (
-                <div className="bg-white rounded-2xl border border-gray-200 shadow-card p-12 text-center space-y-2 h-[540px] flex flex-col items-center justify-center">
+                <div className="bg-white rounded-2xl border border-gray-200 shadow-card p-6 sm:p-12 text-center space-y-2 min-h-[220px] lg:h-[540px] flex flex-col items-center justify-center">
                   <div className="max-w-xs space-y-1.5">
                     <h3 className="text-base font-bold text-gray-800">Sẵn sàng tóm tắt</h3>
                     <p className="text-sm text-gray-400 leading-relaxed">
-                      Nhập nội dung hoặc link bài báo ở cột bên trái, sau đó bấm <strong className="text-brand-500">Tóm tắt ngay</strong> để bắt đầu.
+                      Nhập nội dung hoặc link bài báo, sau đó bấm <strong className="text-brand-500">Tóm tắt ngay</strong> để bắt đầu.
                     </p>
                   </div>
                 </div>
