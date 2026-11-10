@@ -1,8 +1,12 @@
 from typing import Dict, Any
+from urllib.parse import urljoin, urlsplit
+import ipaddress
+import os
+import socket
 import ssl
 import urllib3
 import requests
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, UnicodeDammit
 
 # Disable SSL warnings for legacy news sites
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -36,20 +40,69 @@ except ImportError:
     Article = None
 
 
+_DEMO_NEWS_HOSTS = frozenset({
+    'vnexpress.net', 'www.vnexpress.net', 'tuoitre.vn', 'www.tuoitre.vn',
+    'dantri.com.vn', 'www.dantri.com.vn', 'vietnamnet.vn', 'www.vietnamnet.vn',
+    'baochinhphu.vn', 'www.baochinhphu.vn',
+    'cnn.com', 'www.cnn.com', 'edition.cnn.com',
+})
+
+
+def _fetch_demo_article(url: str, headers: dict) -> str:
+    """Fetch only approved public news hosts, including every redirect target."""
+    message = 'Bản demo chỉ hỗ trợ link HTTPS từ VnExpress, Tuổi Trẻ, Dân Trí, Vietnamnet, Báo Chính phủ và CNN.'
+    with requests.Session() as session:
+        session.trust_env = False
+        for _ in range(4):
+            if any(ord(c) < 32 or c == '\\' for c in url):
+                raise ValueError(message)
+            try:
+                parsed = urlsplit(url)
+                host = parsed.hostname
+                if (parsed.scheme != 'https' or host not in _DEMO_NEWS_HOSTS
+                        or parsed.username is not None or parsed.password is not None
+                        or parsed.port not in (None, 443)):
+                    raise ValueError(message)
+                addresses = socket.getaddrinfo(host, 443, type=socket.SOCK_STREAM)
+                if not addresses or any(not ipaddress.ip_address(addr[4][0]).is_global for addr in addresses):
+                    raise ValueError(message)
+            except (ValueError, OSError):
+                raise ValueError(message) from None
+            try:
+                with session.get(url, headers=headers, timeout=(4, 8), allow_redirects=False, stream=True) as resp:
+                    if resp.is_redirect:
+                        url = urljoin(url, resp.headers['Location'])
+                        continue
+                    resp.raise_for_status()
+                    body = bytearray()
+                    for chunk in resp.iter_content(chunk_size=65536):
+                        body.extend(chunk)
+                        if len(body) > 2 * 1024 * 1024:
+                            raise ValueError('Trang bài báo vượt giới hạn dung lượng của bản demo.')
+                    return UnicodeDammit(bytes(body), is_html=True).unicode_markup or ''
+            except requests.RequestException:
+                raise ValueError('Không thể tải bài báo từ nguồn này.') from None
+    raise ValueError('Đường dẫn bài báo chuyển hướng quá nhiều lần.')
+
+
 def crawl_article_from_url(url: str) -> Dict[str, str]:
     """
     Crawls news article title and text from URL using dedicated Vietnamese news parser + newspaper3k fallback.
     """
-    session = get_robust_session()
+    public_demo = os.getenv('PUBLIC_DEMO_URLS') == '1'
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
 
     html_content = None
-    try:
-        resp = session.get(url, headers=headers, timeout=12, verify=False)
-        resp.encoding = resp.apparent_encoding or 'utf-8'
-        html_content = resp.text
-    except Exception as fetch_err:
-        print(f"Direct session fetch failed for {url}: {fetch_err}")
+    if public_demo:
+        html_content = _fetch_demo_article(url, headers)
+    else:
+        try:
+            with get_robust_session() as session:
+                resp = session.get(url, headers=headers, timeout=12, verify=False)
+                resp.encoding = resp.apparent_encoding or 'utf-8'
+                html_content = resp.text
+        except Exception as fetch_err:
+            print(f"Direct session fetch failed for {url}: {fetch_err}")
 
     # 1. Primary: Dedicated BeautifulSoup extraction targeting Sapo + Content Body + Caption Filtering
     if html_content:
@@ -100,7 +153,7 @@ def crawl_article_from_url(url: str) -> Dict[str, str]:
             print(f"BeautifulSoup parsing failed: {bs_err}. Trying newspaper3k...")
 
     # 2. Fallback to newspaper3k parsing
-    if Article is not None:
+    if Article is not None and (html_content or not public_demo):
         try:
             if html_content:
                 article = Article(url)
