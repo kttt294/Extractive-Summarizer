@@ -1,12 +1,13 @@
-# Học biểu diễn và lựa chọn mô hình cho tóm tắt trích xuất tiếng Việt
+# Trích xuất thông tin quan trọng trong một bài viết: Tinh chỉnh, so sánh và lựa chọn mô hình cho tiếng Việt và tiếng Anh
 
-Bài tập lớn môn Học máy nâng cao. Nghiên cứu so sánh SBERT pretrained và fine-tuned,
-Logistic Regression, MLP, K-Means, centroid, Lead-3 và TextRank trên VietNews.
+Bài tập lớn môn Học máy nâng cao về tóm tắt trích xuất, tức chọn các câu quan trọng
+từ văn bản gốc. Nghiên cứu tinh chỉnh và so sánh encoder SBERT trên VietNews
+(tiếng Việt) và CNN/DailyMail (tiếng Anh). Hai ngôn ngữ đều có các đối chứng
+Lead-3, TextRank, Centroid và K-Means. Tiếng Việt khảo sát thêm Logistic Regression và MLP.
 
 ## Cấu trúc
 
-- `docs/BaoCao_BTL.docx`: báo cáo hoàn chỉnh, gồm phân tích loss curve SBERT/MLP.
-- `docs/AdvancedML_ExtractiveSummarizer.ipynb`: notebook end-to-end đã lưu output.
+- [BaoCao_BTL.docx](BaoCao_BTL.docx): báo cáo hoàn chỉnh, gồm phân tích đường cong loss.
 - `src/`: thuật toán; `tests/`: kiểm thử giao thức và website.
 - `backend/`, `frontend/`: website demo; Dockerfile và `docker-compose.yml`
   phục vụ triển khai.
@@ -14,7 +15,8 @@ Logistic Regression, MLP, K-Means, centroid, Lead-3 và TextRank trên VietNews.
 
 ## Chạy lại thực nghiệm
 
-Mở `AdvancedML_ExtractiveSummarizer.ipynb` trên Google Colab, chọn GPU T4 rồi Run all.
+Mở file `AdvancedML_ExtractiveSummarizer.ipynb` trên Google Colab, chọn GPU T4
+rồi Run all.
 Notebook tự clone mã từ https://github.com/kttt294/Extractive-Summarizer và cài
 môi trường. Không cần Google Drive hoặc checkpoint đã fine-tune trước.
 Cell cuối đóng gói kết quả và tải ZIP về máy. Nếu đổi mã hoặc cấu hình, dùng
@@ -44,11 +46,11 @@ Backend cố định revision và kiểm tra checksum Logistic trước khi nạ
 
 Website tiếng Việt tự tải encoder pretrained công khai và Logistic seed 42 từ Hub.
 Không thay encoder này bằng bản fine-tuned: head được học trên đặc trưng pretrained.
-Tiếng Anh dùng encoder pretrained công khai với K-Means kế thừa.
+Mã backend trong repo này dùng encoder pretrained với K-Means cho tiếng Anh.
 Website hỗ trợ ba chế độ cho cả nhập văn bản, URL và chủ đề, kể cả nhận diện ngôn ngữ
-tự động. Tiếng Việt chọn tối đa 2/3/5 câu tương ứng Ngắn gọn/Tiêu chuẩn/Chi tiết;
-Tiêu chuẩn vẫn khớp ngân sách 3 câu trong báo cáo. Hai độ dài bổ sung là tùy chọn
-ứng dụng, không thay đổi giao thức hoặc kết quả đánh giá trong notebook.
+tự động. Tiếng Việt chọn tối đa 2/3/5 câu tương ứng Ngắn gọn/Tiêu chuẩn/Chi tiết.
+Nhánh tiếng Anh tính số câu mục tiêu và số cụm K-Means theo số câu hợp lệ và chế độ
+người dùng chọn. Các bảng kết quả dưới đây dùng ba câu cố định cho mỗi bài.
 
 ## Chạy website và kiểm thử
 
@@ -87,30 +89,35 @@ python -m pytest -q tests
 Một kiểm thử đối chiếu artifact thật chỉ chạy khi có đủ weights và cache embedding;
 bản nộp gọn sẽ bỏ qua kiểm thử đó. Các kiểm thử giao thức và API còn lại vẫn chạy.
 
-## Thiết kế thực nghiệm
+## Kết quả nổi bật
 
-Dữ liệu VietNews được lấy mẫu với seed cố định, kiểm tra trùng chính xác sau
-chuẩn hóa; chưa kiểm tra đầy đủ bài gần trùng. Mọi phương pháp cùng chọn ba câu,
-nhưng độ dài theo từ vẫn khác nhau nên cần đọc kèm thống kê độ dài.
+Mỗi phương pháp chọn đúng ba câu trên mỗi bài để so sánh với Lead-3. Các bảng
+dưới đây trích từ kết quả trên **1.000 bài test cho mỗi ngôn ngữ**. ROUGE là F1
+trên thang phần trăm, BERTScore F1 trên thang 0–1.
 
-Nghiên cứu tách hai nhánh: pretrained/fine-tuned SBERT cùng centroid hoặc K-Means;
-và Logistic/MLP học trên embedding pretrained đóng băng cùng ba đặc trưng phụ
-(vị trí, log độ dài, cosine với tâm bài). Scaler chỉ fit train. Nhãn chọn câu
-là greedy ROUGE-1+2 oracle xấp xỉ, không phải nhãn do người đọc gán.
+**Tiếng Việt · VietNews**
 
-SBERT học cosine MSE bằng AdamW trong ba epoch, seed 42; checkpoint được chọn
-bằng validation MSE thấp nhất. Logistic khảo sát C = 0,01/1/100; MLP 128 ReLU
-khảo sát alpha = 0/0,001/0,1 và Adam/SGD ở lr = 0,001. MLP early stopping theo
-validation log-loss. Chọn siêu tham số theo validation ROUGE-L rồi lặp ba seed
-42/123/2026 và các tỷ lệ train 25%/50%/100%. Đây không phải nested CV; fine-tuning
-encoder chỉ chạy một seed.
+| Phương pháp | ROUGE-1 (%) | ROUGE-2 (%) | ROUGE-L (%) | BERTScore F1 |
+|---|---:|---:|---:|---:|
+| Lead-3 | **26,77** | **14,32** | 18,88 | **0,7316** |
+| SBERT pretrained + K-Means | 25,98 | 12,66 | 17,66 | 0,7273 |
+| SBERT fine-tuned + K-Means | 26,13 | 12,87 | 17,86 | 0,7280 |
+| Logistic Regression | 25,95 | 13,29 | **19,13** | 0,7227 |
+| MLP | 25,88 | 12,97 | 18,70 | 0,7233 |
 
-Test được đánh giá sau khi khóa lựa chọn. ROUGE tiếng Việt dùng tokenizer Unicode
-NFC theo âm tiết, giữ dấu; không so trực tiếp với điểm tokenizer ASCII của bài NLP
-cũ. BERTScore dùng encoder đánh giá độc lập. Khoảng tin cậy paired bootstrap lấy
-mẫu theo bài sau khi trung bình seed, mang tính khám phá và chưa chỉnh nhiều so sánh.
+**Tiếng Anh · CNN/DailyMail**
 
-Logistic đạt ROUGE-L trung bình cao nhất trong các cấu hình đã thử, còn Lead-3
-dẫn đầu ROUGE-1, ROUGE-2 và BERTScore. Validation MSE của SBERT giảm mạnh chưa
-chứng minh cải thiện chắc chắn chất lượng K-Means. MLP có dấu hiệu overfitting
-sau epoch 2. Xem output notebook và báo cáo để đọc biểu đồ và phân tích đầy đủ.
+| Phương pháp | ROUGE-1 (%) | ROUGE-2 (%) | ROUGE-L (%) | BERTScore F1 |
+|---|---:|---:|---:|---:|
+| Lead-3 | **40,42** | **17,63** | **25,12** | **0,8700** |
+| TextRank | 33,37 | 12,49 | 21,41 | 0,8585 |
+| SBERT pretrained + Centroid | 33,58 | 12,14 | 21,22 | 0,8593 |
+| SBERT pretrained + K-Means | 33,48 | 11,73 | 20,88 | 0,8591 |
+| SBERT fine-tuned + K-Means | 34,27 | 11,97 | 21,22 | 0,8590 |
+
+Trong bảng tiếng Việt, Logistic Regression có ROUGE-L cao nhất.
+Ở tiếng Anh, encoder fine-tuned được chọn trong hai cấu hình K-Means theo
+ROUGE-L trên validation (22,31% so với 21,91%). Lead-3 dẫn đầu cả bốn chỉ số
+trên test tiếng Anh. Khoảng tin cậy 95% của mức tăng ROUGE-L khi tinh chỉnh
+encoder cho K-Means chứa 0 ở cả hai ngôn ngữ. Xem
+[báo cáo](BaoCao_BTL.docx) để đọc đầy đủ các bảng và phân tích.
