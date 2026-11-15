@@ -7,7 +7,7 @@ Lead-3, TextRank, Centroid và K-Means. Tiếng Việt khảo sát thêm Logisti
 
 ## Cấu trúc
 
-- [BaoCao_BTL.docx](BaoCao_BTL.docx): báo cáo hoàn chỉnh, gồm phân tích đường cong loss.
+- [BaoCao.pdf](BaoCao.pdf): báo cáo hoàn chỉnh, gồm phân tích đường cong loss.
 - `src/`: thuật toán; `tests/`: kiểm thử giao thức và website.
 - `backend/`, `frontend/`: website demo; Dockerfile và `docker-compose.yml`
   phục vụ triển khai.
@@ -97,27 +97,27 @@ trên thang phần trăm, BERTScore F1 trên thang 0–1.
 
 **Tiếng Việt · VietNews**
 
-| Phương pháp | ROUGE-1 (%) | ROUGE-2 (%) | ROUGE-L (%) | BERTScore F1 |
-|---|---:|---:|---:|---:|
-| Lead-3 | **26,77** | **14,32** | 18,88 | **0,7316** |
-| SBERT pretrained + K-Means | 25,98 | 12,66 | 17,66 | 0,7273 |
-| SBERT fine-tuned + K-Means | 26,13 | 12,87 | 17,86 | 0,7280 |
-| Logistic Regression | 25,95 | 13,29 | **19,13** | 0,7227 |
-| MLP | 25,88 | 12,97 | 18,70 | 0,7233 |
+| Phương pháp                | ROUGE-1 (%) | ROUGE-2 (%) | ROUGE-L (%) | BERTScore F1 |
+| -------------------------- | ----------: | ----------: | ----------: | -----------: |
+| Lead-3                     |   **26,77** |   **14,32** |       18,88 |   **0,7316** |
+| SBERT pretrained + K-Means |       25,98 |       12,66 |       17,66 |       0,7273 |
+| SBERT fine-tuned + K-Means |       26,13 |       12,87 |       17,86 |       0,7280 |
+| Logistic Regression        |       25,95 |       13,29 |   **19,13** |       0,7227 |
+| MLP                        |       25,88 |       12,97 |       18,70 |       0,7233 |
 
 **Tiếng Anh · CNN/DailyMail**
 
-| Phương pháp | ROUGE-1 (%) | ROUGE-2 (%) | ROUGE-L (%) | BERTScore F1 |
-|---|---:|---:|---:|---:|
-| Lead-3 | **40,42** | **17,63** | **25,12** | **0,8700** |
-| TextRank | 33,37 | 12,49 | 21,41 | 0,8585 |
-| SBERT pretrained + Centroid | 33,58 | 12,14 | 21,22 | 0,8593 |
-| SBERT pretrained + K-Means | 33,48 | 11,73 | 20,88 | 0,8591 |
-| SBERT fine-tuned + K-Means | 34,27 | 11,97 | 21,22 | 0,8590 |
+| Phương pháp                 | ROUGE-1 (%) | ROUGE-2 (%) | ROUGE-L (%) | BERTScore F1 |
+| --------------------------- | ----------: | ----------: | ----------: | -----------: |
+| Lead-3                      |   **40,42** |   **17,63** |   **25,12** |   **0,8700** |
+| TextRank                    |       33,37 |       12,49 |       21,41 |       0,8585 |
+| SBERT pretrained + Centroid |       33,58 |       12,14 |       21,22 |       0,8593 |
+| SBERT pretrained + K-Means  |       33,48 |       11,73 |       20,88 |       0,8591 |
+| SBERT fine-tuned + K-Means  |       34,27 |       11,97 |       21,22 |       0,8590 |
 
 Trong bảng tiếng Việt, Logistic Regression có ROUGE-L cao nhất.
 Ở tiếng Anh, encoder fine-tuned được chọn trong hai cấu hình K-Means theo
 ROUGE-L trên validation (22,31% so với 21,91%). Lead-3 dẫn đầu cả bốn chỉ số
 trên test tiếng Anh. Khoảng tin cậy 95% của mức tăng ROUGE-L khi tinh chỉnh
 encoder cho K-Means chứa 0 ở cả hai ngôn ngữ. Xem
-[báo cáo](BaoCao_BTL.docx) để đọc đầy đủ các bảng và phân tích.
+[báo cáo](BaoCao.pdf) để đọc đầy đủ các bảng và phân tích.
